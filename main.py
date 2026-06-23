@@ -3,13 +3,13 @@ import requests
 import json
 import sqlite3
 import streamlit as st
-import base64
+from gtts import gTTS
+import io
 
 # ==========================================
 # CONSTANTS & CONFIGURATION
 # ==========================================
 OPENROUTER_KEY = os.environ.get("OPENROUTER_API_KEY")
-ELEVEN_KEY = os.environ.get("ELEVENLABS_API_KEY")
 DB_FILE = "nova_memory.db"
 
 st.set_page_config(page_title="N.O.V.A. CORE", page_icon="🧠", layout="centered")
@@ -28,63 +28,38 @@ st.title("🟢 N.O.V.A. CORE")
 
 voice_profile = st.radio(
     "CHOOSE VOCAL MATRIX FREQUENCY:",
-    ["Female Core (Alice)", "Male Sub-Core (George)"],
+    ["Female Core (US)", "Male Sub-Core (UK)"],
     horizontal=True
 )
 
 if "Female" in voice_profile:
-    SELECTED_VOICE_ID = "Xb7hHBI0v0gc8If8uED5"
-    LANG_CODE = "en-US"
+    T_LANG = "en"
+    T_TLD = "com"  # American accent
     system_gender_prompt = "You are N.O.V.A., an advanced female software engineering AI core."
 else:
-    SELECTED_VOICE_ID = "JBFax7asg6nVwIQmgFLM"
-    LANG_CODE = "en-GB"
+    T_LANG = "en"
+    T_TLD = "co.uk"  # British accent
     system_gender_prompt = "You are N.O.V.A., operating on your secondary male vocal matrix module."
 
 # ==========================================
-# HYBRID AUDIO MATRIX ENGINE (WITH VISIBLE PLAYER)
+# FREE SERVER-SIDE AUDIO LAYER
 # ==========================================
-def speak_text(text, voice_id, lang):
-    """Streams voice audio and renders an interactive browser player to bypass mobile blocks."""
-    clean_text = text.replace("N.O.V.A. Response:", "").strip()
-    
-    if ELEVEN_KEY:
-        try:
-            url = f"https://api.elevenlabs.io/v1/text-to-speech/{voice_id}"
-            headers = {
-                "Accept": "audio/mpeg",
-                "Content-Type": "application/json",
-                "xi-api-key": ELEVEN_KEY
-            }
-            data = {
-                "text": clean_text,
-                "model_id": "eleven_multilingual_v2",
-                "voice_settings": {"stability": 0.5, "similarity_boost": 0.75}
-            }
-            response = requests.post(url, json=data, headers=headers)
-            if response.status_code == 200:
-                audio_bytes = response.content
-                # Displays a visible play bar right under N.O.V.A's text box so you can manually trigger it
-                st.audio(audio_bytes, format="audio/mp3", autoplay=True)
-                return
-        except:
-            pass
-
-    # BROWSER TTS FALLBACK MATRIX WITH AUDIO COMPONENT
-    js_speech = f"""
-    <script>
-    if ('speechSynthesis' in window) {{
-        window.speechSynthesis.cancel();
-        var utterance = new SpeechSynthesisUtterance({json.dumps(clean_text)});
-        utterance.lang = '{lang}';
-        utterance.pitch = 1.0;
-        utterance.rate = 1.0;
-        window.speechSynthesis.speak(utterance);
-    }}
-    </script>
-    """
-    st.markdown(js_speech, unsafe_allow_html=True)
-    st.info("🔊 Audio transmission sent directly to browser stream engine.")
+def speak_text_free(text, lang, tld):
+    """Generates a free stable audio file and builds a native playback bar."""
+    try:
+        clean_text = text.replace("N.O.V.A. Response:", "").strip()
+        
+        # Generates the voice using Google's free global translate network
+        tts = gTTS(text=clean_text, lang=lang, tld=tld, slow=False)
+        
+        fp = io.BytesIO()
+        tts.write_to_fp(fp)
+        fp.seek(0)
+        
+        # Renders an interactive native audio container directly into your chat window
+        st.audio(fp, format="audio/mp3", autoplay=True)
+    except Exception as e:
+        st.error(f"Audio Layer Offline: {e}")
 
 # ==========================================
 # DATABASE MEMORY LAYER
@@ -179,7 +154,7 @@ if user_query := st.chat_input("Enter command..."):
     with st.chat_message("assistant"):
         st.write("**N.O.V.A.**")
         st.write(reply)
-        # Drops the player interface directly into the chat container
-        speak_text(reply, SELECTED_VOICE_ID, LANG_CODE)
+        # Drop audio player inside the response container
+        speak_text_free(reply, T_LANG, T_TLD)
         
     save_to_memory("N.O.V.A.", reply)
