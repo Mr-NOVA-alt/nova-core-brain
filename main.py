@@ -33,12 +33,11 @@ voice_profile = st.radio(
 )
 
 if "Female" in voice_profile:
-    SELECTED_VOICE_ID = "21m00Tcm4TlvDq8ikWAM"
+    SELECTED_VOICE_ID = "Xb7hHBI0v0gc8If8uED5"  # Updated to free-tier Alice
     system_gender_prompt = "You are N.O.V.A., an advanced female software engineering AI core."
 else:
-    SELECTED_VOICE_ID = "pNInz6obpgDQ5jqqFc74"
+    SELECTED_VOICE_ID = "JBFax7asg6nVwIQmgFLM"  # Updated to free-tier George
     system_gender_prompt = "You are N.O.V.A., operating on your secondary male vocal matrix module."
-
 # ==========================================
 # ELEVENLABS VOICE LOGIC
 # ==========================================
