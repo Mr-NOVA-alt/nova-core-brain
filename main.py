@@ -28,23 +28,29 @@ st.title("🟢 N.O.V.A. CORE")
 
 voice_profile = st.radio(
     "CHOOSE VOCAL MATRIX FREQUENCY:",
-    ["Female Core (Cyber-Aria)", "Male Sub-Core (Neon-Nexus)"],
+    ["Female Core (Alice)", "Male Sub-Core (George)"],
     horizontal=True
 )
 
-# Set dynamic parameters instead of hardcoded voice IDs to bypass free-tier restrictions
+# Pass structured voice profiles to the design generator instead of locked IDs
 if "Female" in voice_profile:
-    voice_description = "A crisp, professional, smooth American young female voice for a technical assistant."
+    voice_gender = "female"
+    voice_age = "young"
+    voice_accent = "american"
+    voice_accent_strength = 1.0
     system_gender_prompt = "You are N.O.V.A., an advanced female software engineering AI core."
 else:
-    voice_description = "A deep, authoritative, calm American middle-aged male narrator voice."
+    voice_gender = "male"
+    voice_age = "middle_aged"
+    voice_accent = "american"
+    voice_accent_strength = 1.0
     system_gender_prompt = "You are N.O.V.A., operating on your secondary male vocal matrix module."
 
 # ==========================================
-# ELEVENLABS VOICE LOGIC (REBUILT TO BYPASS ID ERRORS)
+# ELEVENLABS BYPASS LOGIC
 # ==========================================
-def speak_text(text, description):
-    """Generates audio dynamically via text-to-speech without relying on locked IDs."""
+def speak_text(text, gender, age, accent, strength):
+    """Generates a free custom voice using ElevenLabs Voice Design to bypass premium ID blocks."""
     if not ELEVEN_KEY:
         st.error("ElevenLabs API Key missing in Advanced Secrets!")
         return
@@ -52,7 +58,7 @@ def speak_text(text, description):
     try:
         clean_text = text.replace("N.O.V.A. Response:", "").strip()
         
-        # Using the standard text-to-speech endpoint with a generation model
+        # Endpoint designed specifically for generating on-the-fly custom free voices
         url = "https://api.elevenlabs.io/v1/text-to-speech/generated"
         
         headers = {
@@ -64,7 +70,10 @@ def speak_text(text, description):
         data = {
             "text": clean_text,
             "model_id": "eleven_multilingual_v2",
-            "voice_description": description,
+            "gender": gender,
+            "age": age,
+            "accent": accent,
+            "accent_strength": strength,
             "voice_settings": {
                 "stability": 0.5,
                 "similarity_boost": 0.75
@@ -73,21 +82,12 @@ def speak_text(text, description):
         
         response = requests.post(url, json=data, headers=headers)
         
-        # Fallback to direct text-to-speech with a safe systemic fallback if custom generation fails
-        if response.status_code != 200:
-            # Safe system default voice ID that is always open for free API accounts
-            fallback_id = "21m00Tcm4TlvDq8ikWAM" 
-            url_fallback = f"https://api.elevenlabs.io/v1/text-to-speech/{fallback_id}"
-            response = requests.post(url_fallback, json={"text": clean_text, "model_id": "eleven_multilingual_v2"}, headers=headers)
-
         if response.status_code == 200:
-            audio_bytes = response.content
-            audio_base64 = base64.b64encode(audio_bytes).decode()
+            audio_base64 = base64.b64encode(response.content).decode()
             audio_html = f'<audio autoplay src="data:audio/mp3;base64,{audio_base64}">'
             st.markdown(audio_html, unsafe_allow_html=True)
         else:
-            st.error(f"ElevenLabs Core Error: {response.text}")
-            
+            st.error(f"ElevenLabs Matrix Error: {response.json().get('detail', {}).get('message', response.text)}")
     except Exception as e:
         st.error(f"Voice Link Offline: {e}")
 
@@ -186,7 +186,10 @@ if user_query := st.chat_input("Enter command..."):
         st.write(reply)
         
     save_to_memory("N.O.V.A.", reply)
-    speak_text(reply, voice_description)
+    
+    # Executes generation via attributes dynamically
+    speak_text(reply, voice_gender, voice_age, voice_accent, voice_accent_strength)
+
 
 
 
