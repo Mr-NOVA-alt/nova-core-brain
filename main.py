@@ -3,8 +3,10 @@ import requests
 import json
 import sqlite3
 import streamlit as st
-from gtts import gTTS
+import asyncio
+import edge_tts
 import io
+import re
 
 # ==========================================
 # CONSTANTS & CONFIGURATION
@@ -28,38 +30,58 @@ st.title("🟢 N.O.V.A. CORE")
 
 voice_profile = st.radio(
     "CHOOSE VOCAL MATRIX FREQUENCY:",
-    ["Female Core (US)", "Male Sub-Core (UK)"],
+    ["Female Core (Ava - Natural)", "Male Sub-Core (Andrew - Natural)"],
     horizontal=True
 )
 
+# Selecting high-quality, ultra-realistic premium cloud voices
 if "Female" in voice_profile:
-    T_LANG = "en"
-    T_TLD = "com"  # American accent
+    VOICE_ID = "en-US-AvaNeural"
     system_gender_prompt = "You are N.O.V.A., an advanced female software engineering AI core."
 else:
-    T_LANG = "en"
-    T_TLD = "co.uk"  # British accent
+    VOICE_ID = "en-US-AndrewNeural"
     system_gender_prompt = "You are N.O.V.A., operating on your secondary male vocal matrix module."
 
 # ==========================================
-# FREE SERVER-SIDE AUDIO LAYER
+# TEXT CLEANING ENGINE (STOP EMOJI READING)
 # ==========================================
-def speak_text_free(text, lang, tld):
-    """Generates a free stable audio file and builds a native playback bar."""
+def clean_text_for_speech(text):
+    """Filters out markdown, emojis, and special symbols so the voice sounds natural."""
+    # Remove system labels
+    text = text.replace("N.O.V.A. Response:", "").strip()
+    # Strip out standard markdown formatting like asterisks or code blocks
+    text = re.sub(r'\*+', '', text)
+    text = re.sub(r'```.*?```', '[Code block skipped]', text, flags=re.DOTALL)
+    # Filter out emojis completely so the TTS engine doesn't read them literally
+    text = re.sub(r'[\u2600-\u27BF|[\u2000-\u3300]|[\uD83C-\uD83E][\uDC00-\uDFFF]', '', text)
+    return text
+
+# ==========================================
+# HIGH-SPEED NATURAL AUDIO ENGINE
+# ==========================================
+async def generate_voice(text, voice):
+    """Generates a premium cloud voice asset asynchronously on the fly."""
+    cleaned = clean_text_for_speech(text)
+    communicate = edge_tts.Communicate(cleaned, voice)
+    audio_stream = io.BytesIO()
+    async for chunk in communicate.stream():
+        if chunk["type"] == "audio":
+            audio_stream.write(chunk["data"])
+    audio_stream.seek(0)
+    return audio_stream
+
+def speak_text_premium(text, voice):
+    """Executes the voice generation and runs it with instant browser auto-play."""
     try:
-        clean_text = text.replace("N.O.V.A. Response:", "").strip()
+        # Run the async generator inside Streamlit's synchronous ecosystem
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        audio_data = loop.run_until_complete(generate_voice(text, voice))
         
-        # Generates the voice using Google's free global translate network
-        tts = gTTS(text=clean_text, lang=lang, tld=tld, slow=False)
-        
-        fp = io.BytesIO()
-        tts.write_to_fp(fp)
-        fp.seek(0)
-        
-        # Renders an interactive native audio container directly into your chat window
-        st.audio(fp, format="audio/mp3", autoplay=True)
+        # Pushes an elegant native player into the message block with autoplay active
+        st.audio(audio_data, format="audio/mp3", autoplay=True)
     except Exception as e:
-        st.error(f"Audio Layer Offline: {e}")
+        st.error(f"Vocal Core Interrupted: {e}")
 
 # ==========================================
 # DATABASE MEMORY LAYER
@@ -110,7 +132,7 @@ def ask_nova_core(user_input):
     messages = [
         {
             "role": "system", 
-            "content": f"{system_gender_prompt} You are talking to your creator, Boss Aditya. Keep answers short, conversational, and crisp."
+            "content": f"{system_gender_prompt} You are talking to your creator, Boss Aditya. Talk like a real human friend—keep answers snappy, short, conversational, and omit reading raw code aloud unless asked."
         }
     ]
     
@@ -132,7 +154,7 @@ def ask_nova_core(user_input):
 # ==========================================
 init_memory_db()
 
-st.subheader("PHASE 3 — DUAL VOCAL LAYER ONLINE")
+st.subheader("PHASE 3 — DUAL HUMAN VOCAL ONLINE")
 
 display_memories = load_recent_memory(limit=20)
 for msg in display_memories:
@@ -154,7 +176,7 @@ if user_query := st.chat_input("Enter command..."):
     with st.chat_message("assistant"):
         st.write("**N.O.V.A.**")
         st.write(reply)
-        # Drop audio player inside the response container
-        speak_text_free(reply, T_LANG, T_TLD)
+        # Fires off the clean voice engine without emoji readings
+        speak_text_premium(reply, VOICE_ID)
         
     save_to_memory("N.O.V.A.", reply)
