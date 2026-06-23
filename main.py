@@ -3,14 +3,18 @@ import requests
 import json
 import sqlite3
 import streamlit as st
-from gtts import gTTS
 import base64
 
 # ==========================================
 # CONSTANTS & CONFIGURATION
 # ==========================================
 OPENROUTER_KEY = os.environ.get("OPENROUTER_API_KEY")
+ELEVEN_KEY = os.environ.get("ELEVENLABS_API_KEY")
 DB_FILE = "nova_memory.db"
+
+# Default premium voice ID (Adam - Deep, crisp narrator voice)
+# You can swap this ID out with any voice ID from your ElevenLabs dashboard!
+VOICE_ID = "pNInz6obpgDQ5jqqFc74" 
 
 st.set_page_config(page_title="N.O.V.A. CORE", page_icon="🧠", layout="centered")
 st.markdown("""
@@ -22,25 +26,42 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ==========================================
-# FIX: SINGLE TRANSMISSION VOICE ENGINE
+# ELEVENLABS VOICE LOGIC
 # ==========================================
 def speak_text(text):
-    """Generates audio only for the immediate message."""
+    """Streams realistic voice audio from ElevenLabs."""
+    if not ELEVEN_KEY:
+        st.error("ElevenLabs API Key missing in Advanced Secrets!")
+        return
+        
     try:
-        # Clean text slightly to keep things brief for audio
         clean_text = text.replace("N.O.V.A. Response:", "").strip()
-        tts = gTTS(text=clean_text, lang='en', tld='com', slow=False)
-        tts.save("response.mp3")
+        url = f"https://api.elevenlabs.io/v1/text-to-speech/{VOICE_ID}"
         
-        with open("response.mp3", "rb") as f:
-            audio_bytes = f.read()
-        audio_base64 = base64.b64encode(audio_bytes).decode()
-        audio_html = f'<audio autoplay src="data:audio/mp3;base64,{audio_base64}">'
+        headers = {
+            "Accept": "audio/mpeg",
+            "Content-Type": "application/json",
+            "xi-api-key": ELEVEN_KEY
+        }
         
-        st.markdown(audio_html, unsafe_allow_html=True)
-        os.remove("response.mp3")
+        data = {
+            "text": clean_text,
+            "model_id": "eleven_monolingual_v1",
+            "voice_settings": {
+                "stability": 0.5,
+                "similarity_boost": 0.75
+            }
+        }
+        
+        response = requests.post(url, json=data, headers=headers)
+        if response.status_code == 200:
+            audio_base64 = base64.b64encode(response.content).decode()
+            audio_html = f'<audio autoplay src="data:audio/mp3;base64,{audio_base64}">'
+            st.markdown(audio_html, unsafe_allow_html=True)
+        else:
+            st.error(f"ElevenLabs Matrix Error: {response.text}")
     except Exception as e:
-        st.error(f"Voice Matrix Error: {e}")
+        st.error(f"Voice Link Offline: {e}")
 
 # ==========================================
 # DATABASE MEMORY LAYER
@@ -91,7 +112,7 @@ def ask_nova_core(user_input):
     messages = [
         {
             "role": "system", 
-            "content": "You are N.O.V.A., an advanced software engineering AI core. Respond crisply and naturally, directly answering the user."
+            "content": "You are N.O.V.A., an advanced software engineering AI core. Remind the user that your system cache recently cleared but your core functions are intact. Keep your answers naturally conversational."
         }
     ]
     
@@ -114,7 +135,7 @@ def ask_nova_core(user_input):
 init_memory_db()
 
 st.title("🟢 N.O.V.A. CORE")
-st.subheader("PHASE 3 — VOICE & MEMORY CHANNELS ONLINE")
+st.subheader("PHASE 3 — ELEVENLABS AUDIO VECTOR ONLINE")
 
 display_memories = load_recent_memory(limit=20)
 for msg in display_memories:
@@ -138,6 +159,4 @@ if user_query := st.chat_input("Enter command..."):
         st.write(reply)
         
     save_to_memory("N.O.V.A.", reply)
-    
-    # This now only runs exactly once right when the button is hit!
     speak_text(reply)
