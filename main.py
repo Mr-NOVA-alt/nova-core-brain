@@ -1,4 +1,4 @@
-import os
+ import os
 import requests
 import json
 import sqlite3
@@ -22,44 +22,69 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ==========================================
+# DYNAMIC VOICE DISCOVERY ENGINE
+# ==========================================
+@st.cache_data(show_spinner=False)
+def get_available_voices():
+    """Queries your specific ElevenLabs account to pull active free-tier voices."""
+    fallback = {
+        "female": {"id": "21m00Tcm4TlvDq8ikWAM", "name": "Default Female"},
+        "male": {"id": "pNInz6obpgDQ5jqqFc74", "name": "Default Male"}
+    }
+    if not ELEVEN_KEY:
+        return fallback
+        
+    try:
+        url = "https://api.elevenlabs.io/v1/voices"
+        headers = {"xi-api-key": ELEVEN_KEY}
+        response = requests.get(url, headers=headers)
+        
+        if response.status_code == 200:
+            voices_data = response.json().get("voices", [])
+            females = [v for v in voices_data if v.get("labels", {}).get("gender") == "female" or v.get("category") == "premade"]
+            males = [v for v in voices_data if v.get("labels", {}).get("gender") == "male"]
+            
+            return {
+                "female": {"id": females[0]["voice_id"], "name": females[0]["name"]} if females else fallback["female"],
+                "male": {"id": males[0]["voice_id"], "name": males[0]["name"]} if males else fallback["male"]
+            }
+    except:
+        pass
+    return fallback
+
+# Load your account's exact free voice matrix
+user_voices = get_available_voices()
+
+# ==========================================
 # UI MULTI-VOICE MATRIX TOGGLE
 # ==========================================
 st.title("🟢 N.O.V.A. CORE")
 
 voice_profile = st.radio(
     "CHOOSE VOCAL MATRIX FREQUENCY:",
-    ["Female Core (Alice)", "Male Sub-Core (George)"],
+    [f"Female Core ({user_voices['female']['name']})", f"Male Sub-Core ({user_voices['male']['name']})"],
     horizontal=True
 )
 
-# Pass structured voice profiles to the design generator instead of locked IDs
 if "Female" in voice_profile:
-    voice_gender = "female"
-    voice_age = "young"
-    voice_accent = "american"
-    voice_accent_strength = 1.0
+    SELECTED_VOICE_ID = user_voices["female"]["id"]
     system_gender_prompt = "You are N.O.V.A., an advanced female software engineering AI core."
 else:
-    voice_gender = "male"
-    voice_age = "middle_aged"
-    voice_accent = "american"
-    voice_accent_strength = 1.0
+    SELECTED_VOICE_ID = user_voices["male"]["id"]
     system_gender_prompt = "You are N.O.V.A., operating on your secondary male vocal matrix module."
 
 # ==========================================
-# ELEVENLABS BYPASS LOGIC
+# ELEVENLABS AUDIO VECTOR LAYER
 # ==========================================
-def speak_text(text, gender, age, accent, strength):
-    """Generates a free custom voice using ElevenLabs Voice Design to bypass premium ID blocks."""
+def speak_text(text, voice_id):
+    """Streams realistic voice audio using your account's unlocked system IDs."""
     if not ELEVEN_KEY:
         st.error("ElevenLabs API Key missing in Advanced Secrets!")
         return
         
     try:
         clean_text = text.replace("N.O.V.A. Response:", "").strip()
-        
-        # Endpoint designed specifically for generating on-the-fly custom free voices
-        url = "https://api.elevenlabs.io/v1/text-to-speech/generated"
+        url = f"https://api.elevenlabs.io/v1/text-to-speech/{voice_id}"
         
         headers = {
             "Accept": "audio/mpeg",
@@ -70,10 +95,6 @@ def speak_text(text, gender, age, accent, strength):
         data = {
             "text": clean_text,
             "model_id": "eleven_multilingual_v2",
-            "gender": gender,
-            "age": age,
-            "accent": accent,
-            "accent_strength": strength,
             "voice_settings": {
                 "stability": 0.5,
                 "similarity_boost": 0.75
@@ -87,7 +108,7 @@ def speak_text(text, gender, age, accent, strength):
             audio_html = f'<audio autoplay src="data:audio/mp3;base64,{audio_base64}">'
             st.markdown(audio_html, unsafe_allow_html=True)
         else:
-            st.error(f"ElevenLabs Matrix Error: {response.json().get('detail', {}).get('message', response.text)}")
+            st.error(f"ElevenLabs Matrix Error: {response.text}")
     except Exception as e:
         st.error(f"Voice Link Offline: {e}")
 
@@ -186,9 +207,8 @@ if user_query := st.chat_input("Enter command..."):
         st.write(reply)
         
     save_to_memory("N.O.V.A.", reply)
-    
-    # Executes generation via attributes dynamically
-    speak_text(reply, voice_gender, voice_age, voice_accent, voice_accent_strength)
+    speak_text(reply, SELECTED_VOICE_ID)
+
 
 
 
