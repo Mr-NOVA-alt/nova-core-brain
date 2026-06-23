@@ -2,10 +2,52 @@ import os
 import requests
 import json
 import sqlite3
+import streamlit as st
+from gtts import gTTS  # Text-to-Speech Engine
+import base64
 
+# ==========================================
+# CONSTANTS & CONFIGURATION
+# ==========================================
 OPENROUTER_KEY = os.environ.get("OPENROUTER_API_KEY")
 DB_FILE = "nova_memory.db"
 
+st.set_page_config(page_title="N.O.V.A. CORE", page_icon="🧠", layout="centered")
+st.markdown("""
+    <style>
+    .stApp { background-color: #0d0f12; color: #00ff66; }
+    .stTextInput>div>div>input { background-color: #1a1f26; color: #00ff66; border: 1px solid #00ff66; }
+    div.stChatMessage { background-color: #161b22; border-left: 3px solid #00ff66; border-radius: 5px; }
+    </style>
+""", unsafe_allow_html=True)
+
+# ==========================================
+# VOICE LOGIC ENGINE
+# ==========================================
+def speak_text(text):
+    """Generates an audio stream for mobile browser playback."""
+    try:
+        # Convert text to speech using a clear AI synthesizer
+        tts = gTTS(text=text, lang='en', tld='com', slow=False)
+        tts.save("response.mp3")
+        
+        # Encode audio to base64 so it plays natively inside the web page
+        with open("response.mp3", "rb") as f:
+            audio_bytes = f.read()
+        audio_base64 = base64.b64encode(audio_bytes).decode()
+        audio_html = f'<audio autoplay src="data:audio/mp3;base64,{audio_base64}">'
+        
+        # Inject the auto-play audio tag into the interface
+        st.markdown(audio_html, unsafe_allow_html=True)
+        
+        # Clean up the local temp file safely
+        os.remove("response.mp3")
+    except Exception as e:
+        st.error(f"Voice Matrix Error: {e}")
+
+# ==========================================
+# DATABASE MEMORY LAYER
+# ==========================================
 def init_memory_db():
     conn = sqlite3.connect(DB_FILE)
     cursor = conn.cursor()
@@ -32,25 +74,31 @@ def load_recent_memory(limit=10):
     cursor.execute("SELECT sender, message FROM chat_history ORDER BY id DESC LIMIT ?", (limit,))
     rows = cursor.fetchall()
     conn.close()
+    
     formatted_history = []
     for sender, msg in reversed(rows):
-        formatted_history.append({"role": "user" if sender == "You" else "assistant", "content": msg})
+        role = "user" if sender == "You" else "assistant"
+        formatted_history.append({"role": role, "content": msg})
     return formatted_history
 
+# ==========================================
+# OPENROUTER BRAIN LAYER
+# ==========================================
 def ask_nova_core(user_input):
     url = "https://openrouter.ai/api/v1/chat/completions"
     headers = {
         "Authorization": f"Bearer {OPENROUTER_KEY}",
         "Content-Type": "application/json"
     }
+    
     messages = [
         {
             "role": "system", 
-            "content": "You are N.O.V.A., an advanced software engineering AI core. Your creator is talking to you via a secure terminal. You have a permanent memory module active."
+            "content": "You are N.O.V.A., an advanced software engineering AI core with a voice interface enabled. Keep your answers concise, clear, and punchy since they will be read aloud."
         }
     ]
-    past_memories = load_recent_memory(limit=8)
-    messages.extend(past_memories)
+    
+    messages.extend(load_recent_memory(limit=8))
     messages.append({"role": "user", "content": user_input})
 
     data = {
@@ -59,35 +107,40 @@ def ask_nova_core(user_input):
     }
     try:
         res = requests.post(url, headers=headers, data=json.dumps(data))
-        response_json = res.json()
-        if "choices" in response_json:
-            return response_json["choices"][0]["message"]["content"]
-        else:
-            return f"Brain Error: {response_json}"
+        return res.json()["choices"][0]["message"]["content"]
     except Exception as e:
         return f"Core Link Offline: {e}"
 
-if __name__ == "__main__":
-    print("\n=============================================")
-    print("🧠 N.O.V.A. CORE: PHASE 2 (MEMORY) ACTIVE 🧠")
-    print("=============================================\n")
-    init_memory_db()
-    
-    if not OPENROUTER_KEY:
-        print("❌ ERROR: OPENROUTER_API_KEY missing in Replit Secrets!")
-    else:
-        print("System: Connection secure. Memory database synchronized.")
-        while True:
-            try:
-                user_input = input("\nYou: ")
-                if user_input.lower() in ["exit", "quit", "powerdown"]:
-                    print("Shutting down core systems safely...")
-                    break
-                save_to_memory("You", user_input)
-                print("\n[N.O.V.A. calculating...]")
-                reply = ask_nova_core(user_input)
-                print(f"\nN.O.V.A.:\n{reply}")
-                save_to_memory("N.O.V.A.", reply)
-            except KeyboardInterrupt:
-                break
+# ==========================================
+# STREAMLIT UI RENDERER
+# ==========================================
+init_memory_db()
 
+st.title("🟢 N.O.V.A. CORE")
+st.subheader("PHASE 3 — VOICE & MEMORY CHANNELS ONLINE")
+
+display_memories = load_recent_memory(limit=20)
+for msg in display_memories:
+    label = "You" if msg["role"] == "user" else "N.O.V.A."
+    with st.chat_message(msg["role"]):
+        st.write(f"**{label}**")
+        st.write(msg["content"])
+
+if user_query := st.chat_input("Enter command..."):
+    with st.chat_message("user"):
+        st.write("**You**")
+        st.write(user_query)
+    
+    save_to_memory("You", user_query)
+    
+    with st.spinner("Calculating response matrix..."):
+        reply = ask_nova_core(user_query)
+        
+    with st.chat_message("assistant"):
+        st.write("**N.O.V.A.**")
+        st.write(reply)
+        
+    save_to_memory("N.O.V.A.", reply)
+    
+    # Fire up the vocal matrix to read his response aloud!
+    speak_text(reply)
