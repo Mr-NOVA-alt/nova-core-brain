@@ -24,28 +24,28 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ==========================================
-# UI MULTI-VOICE MATRIX TOGGLE
+# UI MULTI-VOICE MATRIX TOGGLE (INDIAN CORE)
 # ==========================================
 st.title("🟢 N.O.V.A. CORE")
 
 voice_profile = st.radio(
     "CHOOSE VOCAL MATRIX FREQUENCY:",
-    ["Female Core (Ava - Natural)", "Male Sub-Core (Andrew - Natural)"],
+    ["Female Core (Neerja - Indian English)", "Male Sub-Core (Prabhat - Indian English)"],
     horizontal=True
 )
 
 if "Female" in voice_profile:
-    VOICE_ID = "en-US-AvaNeural"
-    system_gender_prompt = "You are N.O.V.A., an advanced female software engineering AI core."
+    VOICE_ID = "en-IN-NeerjaNeural"  # Ultra-realistic Indian Female Voice
+    system_gender_prompt = "You are N.O.V.A., an advanced female software engineering AI core based in India."
 else:
-    VOICE_ID = "en-US-AndrewNeural"
-    system_gender_prompt = "You are N.O.V.A., operating on your secondary male vocal matrix module."
+    VOICE_ID = "en-IN-PrabhatNeural"  # Ultra-realistic Indian Male Voice
+    system_gender_prompt = "You are N.O.V.A., operating on your secondary male vocal matrix module based in India."
 
 # ==========================================
-# BULLETPROOF EMOJI STRIPPER ENGINE
+# TEXT CLEANING ENGINE (NO EMOJIS, NO STRETCHED LETTERS)
 # ==========================================
 def clean_text_for_speech(text):
-    """Aggressively purges all emojis, markdown, and code blocks from audio stream."""
+    """Aggressively purges emojis, markdown, and standardizes stretched out words."""
     text = text.replace("N.O.V.A. Response:", "").strip()
     
     # Strip down code blocks and markdown symbols
@@ -53,18 +53,21 @@ def clean_text_for_speech(text):
     text = re.sub(r'\*+', '', text)
     text = re.sub(r'`', '', text)
     
-    # Ultimate Master Emoji Filter (Catches all ranges, variations, and modifiers)
+    # Fix letter stretching (e.g., converts "yayyyyyy" to "yay" or "nooooo" to "noo")
+    # This keeps it sounding completely natural instead of robotic spelling!
+    text = re.sub(r'([a-zA-Z])\1{2,}', r'\1\1', text)
+    
+    # Ultimate Master Emoji Filter
     emoji_pattern = re.compile(
-        r'[\U00010000-\U0010ffff]'  # Supplemental Planes (Most emojis live here)
-        r'|[\u2700-\u27BF]'         # Dingbats
-        r'|[\u2600-\u26FF]'         # Miscellaneous Symbols
-        r'|[\u2B50-\u2B55]'         # Stars and Shapes
-        r'|[\u2000-\u3300]'         # General Punctuation & CJK symbols
-        r'|[\uE000-\uF8FF]'         # Private Use Area
+        r'[\U00010000-\U0010ffff]'
+        r'|[\u2700-\u27BF]'
+        r'|[\u2600-\u26FF]'
+        r'|[\u2B50-\u2B55]'
+        r'|[\u2000-\u3300]'
+        r'|[\uE000-\uF8FF]'
     )
     text = emoji_pattern.sub('', text)
     
-    # Clean up double spaces left behind by deleted emojis
     text = re.sub(r'\s+', ' ', text).strip()
     return text
 
