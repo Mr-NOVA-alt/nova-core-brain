@@ -18,7 +18,6 @@ st.markdown("""
     .stApp { background-color: #0d0f12; color: #00ff66; }
     .stTextInput>div>div>input { background-color: #1a1f26; color: #00ff66; border: 1px solid #00ff66; }
     div.stChatMessage { background-color: #161b22; border-left: 3px solid #00ff66; border-radius: 5px; }
-    stRadio>div{gap: 20px;}
     </style>
 """, unsafe_allow_html=True)
 
@@ -27,19 +26,17 @@ st.markdown("""
 # ==========================================
 st.title("🟢 N.O.V.A. CORE")
 
-# Interactive vocal profile selector for your mobile screen
 voice_profile = st.radio(
     "CHOOSE VOCAL MATRIX FREQUENCY:",
     ["Female Core (Rachel)", "Male Sub-Core (Adam)"],
     horizontal=True
 )
 
-# Assign correct free-tier Voice ID based on selection
 if "Female" in voice_profile:
-    SELECTED_VOICE_ID = "21m00Tcm4TlvDq8ikWAM" # Rachel
+    SELECTED_VOICE_ID = "21m00Tcm4TlvDq8ikWAM"
     system_gender_prompt = "You are N.O.V.A., an advanced female software engineering AI core."
 else:
-    SELECTED_VOICE_ID = "pNInz6obpgDQ5jqqFc74" # Adam
+    SELECTED_VOICE_ID = "pNInz6obpgDQ5jqqFc74"
     system_gender_prompt = "You are N.O.V.A., operating on your secondary male vocal matrix module."
 
 # ==========================================
@@ -63,7 +60,7 @@ def speak_text(text, voice_id):
         
         data = {
             "text": clean_text,
-            "model_id": "eleven_multilingual_v2", # Free tier safe
+            "model_id": "eleven_multilingual_v2",
             "voice_settings": {
                 "stability": 0.5,
                 "similarity_boost": 0.75
@@ -141,3 +138,38 @@ def ask_nova_core(user_input):
         "messages": messages
     }
     try:
+        res = requests.post(url, headers=headers, data=json.dumps(data))
+        return res.json()["choices"][0]["message"]["content"]
+    except Exception as e:
+        return f"Core Link Offline: {e}"
+
+# ==========================================
+# STREAMLIT UI RENDERER
+# ==========================================
+init_memory_db()
+
+st.subheader("PHASE 3 — DUAL VOCAL MATRIX ONLINE")
+
+display_memories = load_recent_memory(limit=20)
+for msg in display_memories:
+    label = "You" if msg["role"] == "user" else "N.O.V.A."
+    with st.chat_message(msg["role"]):
+        st.write(f"**{label}**")
+        st.write(msg["content"])
+
+if user_query := st.chat_input("Enter command..."):
+    with st.chat_message("user"):
+        st.write("**You**")
+        st.write(user_query)
+    
+    save_to_memory("You", user_query)
+    
+    with st.spinner("Calculating response matrix..."):
+        reply = ask_nova_core(user_query)
+        
+    with st.chat_message("assistant"):
+        st.write("**N.O.V.A.**")
+        st.write(reply)
+        
+    save_to_memory("N.O.V.A.", reply)
+    speak_text(reply, SELECTED_VOICE_ID)
