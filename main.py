@@ -14,7 +14,7 @@ DB_FILE = "nova_memory.db"
 
 # Default premium voice ID (Adam - Deep, crisp narrator voice)
 # You can swap this ID out with any voice ID from your ElevenLabs dashboard!
-VOICE_ID = "pNInz6obpgDQ5jqqFc74" 
+VOICE_ID = "douDhHvfoViWmZth0cUX" 
 
 st.set_page_config(page_title="N.O.V.A. CORE", page_icon="🧠", layout="centered")
 st.markdown("""
