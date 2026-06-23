@@ -22,95 +22,69 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ==========================================
-# DYNAMIC VOICE DISCOVERY ENGINE
-# ==========================================
-@st.cache_data(show_spinner=False)
-def get_available_voices():
-    """Queries your specific ElevenLabs account to pull active free-tier voices."""
-    fallback = {
-        "female": {"id": "21m00Tcm4TlvDq8ikWAM", "name": "Default Female"},
-        "male": {"id": "pNInz6obpgDQ5jqqFc74", "name": "Default Male"}
-    }
-    if not ELEVEN_KEY:
-        return fallback
-        
-    try:
-        url = "https://api.elevenlabs.io/v1/voices"
-        headers = {"xi-api-key": ELEVEN_KEY}
-        response = requests.get(url, headers=headers)
-        
-        if response.status_code == 200:
-            voices_data = response.json().get("voices", [])
-            females = [v for v in voices_data if v.get("labels", {}).get("gender") == "female" or v.get("category") == "premade"]
-            males = [v for v in voices_data if v.get("labels", {}).get("gender") == "male"]
-            
-            return {
-                "female": {"id": females[0]["voice_id"], "name": females[0]["name"]} if females else fallback["female"],
-                "male": {"id": males[0]["voice_id"], "name": males[0]["name"]} if males else fallback["male"]
-            }
-    except:
-        pass
-    return fallback
-
-# Load your account's exact free voice matrix
-user_voices = get_available_voices()
-
-# ==========================================
 # UI MULTI-VOICE MATRIX TOGGLE
 # ==========================================
 st.title("🟢 N.O.V.A. CORE")
 
 voice_profile = st.radio(
     "CHOOSE VOCAL MATRIX FREQUENCY:",
-    [f"Female Core ({user_voices['female']['name']})", f"Male Sub-Core ({user_voices['male']['name']})"],
+    ["Female Core (Alice)", "Male Sub-Core (George)"],
     horizontal=True
 )
 
+# Unrestricted base tier functional system IDs
 if "Female" in voice_profile:
-    SELECTED_VOICE_ID = user_voices["female"]["id"]
+    SELECTED_VOICE_ID = "Xb7hHBI0v0gc8If8uED5"
+    LANG_CODE = "en-US"
     system_gender_prompt = "You are N.O.V.A., an advanced female software engineering AI core."
 else:
-    SELECTED_VOICE_ID = user_voices["male"]["id"]
+    SELECTED_VOICE_ID = "JBFax7asg6nVwIQmgFLM"
+    LANG_CODE = "en-GB"
     system_gender_prompt = "You are N.O.V.A., operating on your secondary male vocal matrix module."
 
 # ==========================================
-# ELEVENLABS AUDIO VECTOR LAYER
+# HYBRID AUDIO MATRIX ENGINE
 # ==========================================
-def speak_text(text, voice_id):
-    """Streams realistic voice audio using your account's unlocked system IDs."""
-    if not ELEVEN_KEY:
-        st.error("ElevenLabs API Key missing in Advanced Secrets!")
-        return
-        
-    try:
-        clean_text = text.replace("N.O.V.A. Response:", "").strip()
-        url = f"https://api.elevenlabs.io/v1/text-to-speech/{voice_id}"
-        
-        headers = {
-            "Accept": "audio/mpeg",
-            "Content-Type": "application/json",
-            "xi-api-key": ELEVEN_KEY
-        }
-        
-        data = {
-            "text": clean_text,
-            "model_id": "eleven_multilingual_v2",
-            "voice_settings": {
-                "stability": 0.5,
-                "similarity_boost": 0.75
+def speak_text(text, voice_id, lang):
+    """Attempts ElevenLabs premium execution with an automatic zero-fail browser fallback."""
+    clean_text = text.replace("N.O.V.A. Response:", "").strip()
+    
+    if ELEVEN_KEY:
+        try:
+            url = f"https://api.elevenlabs.io/v1/text-to-speech/{voice_id}"
+            headers = {
+                "Accept": "audio/mpeg",
+                "Content-Type": "application/json",
+                "xi-api-key": ELEVEN_KEY
             }
-        }
-        
-        response = requests.post(url, json=data, headers=headers)
-        
-        if response.status_code == 200:
-            audio_base64 = base64.b64encode(response.content).decode()
-            audio_html = f'<audio autoplay src="data:audio/mp3;base64,{audio_base64}">'
-            st.markdown(audio_html, unsafe_allow_html=True)
-        else:
-            st.error(f"ElevenLabs Matrix Error: {response.text}")
-    except Exception as e:
-        st.error(f"Voice Link Offline: {e}")
+            data = {
+                "text": clean_text,
+                "model_id": "eleven_multilingual_v2",
+                "voice_settings": {"stability": 0.5, "similarity_boost": 0.75}
+            }
+            response = requests.post(url, json=data, headers=headers)
+            if response.status_code == 200:
+                audio_base64 = base64.b64encode(response.content).decode()
+                audio_html = f'<audio autoplay src="data:audio/mp3;base64,{audio_base64}">'
+                st.markdown(audio_html, unsafe_allow_html=True)
+                return
+        except:
+            pass
+
+    # ZERO-FAIL WEB API FALLBACK: Executes native browser speech synthesis matrix
+    js_speech = f"""
+    <script>
+    if ('speechSynthesis' in window) {{
+        window.speechSynthesis.cancel();
+        var utterance = new SpeechSynthesisUtterance({json.dumps(clean_text)});
+        utterance.lang = '{lang}';
+        utterance.pitch = 1.0;
+        utterance.rate = 1.0;
+        window.speechSynthesis.speak(utterance);
+    }}
+    </script>
+    """
+    st.markdown(js_speech, unsafe_allow_html=True)
 
 # ==========================================
 # DATABASE MEMORY LAYER
@@ -161,7 +135,7 @@ def ask_nova_core(user_input):
     messages = [
         {
             "role": "system", 
-            "content": f"{system_gender_prompt} Keep your answers naturally conversational, clear, and snappy."
+            "content": f"{system_gender_prompt} You are talking to your creator, Boss Aditya. Maintain your highly conversational, helpful, and sharp AI tone."
         }
     ]
     
@@ -183,7 +157,7 @@ def ask_nova_core(user_input):
 # ==========================================
 init_memory_db()
 
-st.subheader("PHASE 3 — DUAL VOCAL MATRIX ONLINE")
+st.subheader("PHASE 3 — UNRESTRICTED HYBRID VOCAL LAYER")
 
 display_memories = load_recent_memory(limit=20)
 for msg in display_memories:
@@ -207,9 +181,4 @@ if user_query := st.chat_input("Enter command..."):
         st.write(reply)
         
     save_to_memory("N.O.V.A.", reply)
-    speak_text(reply, SELECTED_VOICE_ID)
-
-
-
-
-
+    speak_text(reply, SELECTED_VOICE_ID, LANG_CODE)
