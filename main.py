@@ -28,21 +28,23 @@ st.title("🟢 N.O.V.A. CORE")
 
 voice_profile = st.radio(
     "CHOOSE VOCAL MATRIX FREQUENCY:",
-    ["Female Core (Rachel)", "Male Sub-Core (Adam)"],
+    ["Female Core (Alice)", "Male Sub-Core (George)"],
     horizontal=True
 )
 
+# Using fresh, unrestricted v2-native free IDs
 if "Female" in voice_profile:
-    SELECTED_VOICE_ID = "Xb7hHBI0v0gc8If8uED5"  # Updated to free-tier Alice
+    SELECTED_VOICE_ID = "Xb7hHBI0v0gc8If8uED5"  # Alice (Free Tier Safe)
     system_gender_prompt = "You are N.O.V.A., an advanced female software engineering AI core."
 else:
-    SELECTED_VOICE_ID = "JBFax7asg6nVwIQmgFLM"  # Updated to free-tier George
+    SELECTED_VOICE_ID = "JBFax7asg6nVwIQmgFLM"  # George (Free Tier Safe)
     system_gender_prompt = "You are N.O.V.A., operating on your secondary male vocal matrix module."
+
 # ==========================================
 # ELEVENLABS VOICE LOGIC
 # ==========================================
 def speak_text(text, voice_id):
-    """Streams realistic voice audio from ElevenLabs dynamically."""
+    """Streams realistic voice audio from ElevenLabs dynamically using V2 Models."""
     if not ELEVEN_KEY:
         st.error("ElevenLabs API Key missing in Advanced Secrets!")
         return
@@ -59,7 +61,7 @@ def speak_text(text, voice_id):
         
         data = {
             "text": clean_text,
-            "model_id": "eleven_multilingual_v2",
+            "model_id": "eleven_multilingual_v2", # Forced to V2 multilingual engine
             "voice_settings": {
                 "stability": 0.5,
                 "similarity_boost": 0.75
@@ -68,7 +70,8 @@ def speak_text(text, voice_id):
         
         response = requests.post(url, json=data, headers=headers)
         if response.status_code == 200:
-            audio_base64 = base64.b64encode(response.content).decode()
+            audio_bytes = response.content
+            audio_base64 = base64.b64encode(audio_bytes).decode()
             audio_html = f'<audio autoplay src="data:audio/mp3;base64,{audio_base64}">'
             st.markdown(audio_html, unsafe_allow_html=True)
         else:
@@ -172,3 +175,4 @@ if user_query := st.chat_input("Enter command..."):
         
     save_to_memory("N.O.V.A.", reply)
     speak_text(reply, SELECTED_VOICE_ID)
+
