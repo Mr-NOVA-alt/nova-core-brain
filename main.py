@@ -32,7 +32,6 @@ voice_profile = st.radio(
     horizontal=True
 )
 
-# Unrestricted base tier functional system IDs
 if "Female" in voice_profile:
     SELECTED_VOICE_ID = "Xb7hHBI0v0gc8If8uED5"
     LANG_CODE = "en-US"
@@ -43,10 +42,10 @@ else:
     system_gender_prompt = "You are N.O.V.A., operating on your secondary male vocal matrix module."
 
 # ==========================================
-# HYBRID AUDIO MATRIX ENGINE
+# HYBRID AUDIO MATRIX ENGINE (WITH VISIBLE PLAYER)
 # ==========================================
 def speak_text(text, voice_id, lang):
-    """Attempts ElevenLabs premium execution with an automatic zero-fail browser fallback."""
+    """Streams voice audio and renders an interactive browser player to bypass mobile blocks."""
     clean_text = text.replace("N.O.V.A. Response:", "").strip()
     
     if ELEVEN_KEY:
@@ -64,14 +63,14 @@ def speak_text(text, voice_id, lang):
             }
             response = requests.post(url, json=data, headers=headers)
             if response.status_code == 200:
-                audio_base64 = base64.b64encode(response.content).decode()
-                audio_html = f'<audio autoplay src="data:audio/mp3;base64,{audio_base64}">'
-                st.markdown(audio_html, unsafe_allow_html=True)
+                audio_bytes = response.content
+                # Displays a visible play bar right under N.O.V.A's text box so you can manually trigger it
+                st.audio(audio_bytes, format="audio/mp3", autoplay=True)
                 return
         except:
             pass
 
-    # ZERO-FAIL WEB API FALLBACK: Executes native browser speech synthesis matrix
+    # BROWSER TTS FALLBACK MATRIX WITH AUDIO COMPONENT
     js_speech = f"""
     <script>
     if ('speechSynthesis' in window) {{
@@ -85,6 +84,7 @@ def speak_text(text, voice_id, lang):
     </script>
     """
     st.markdown(js_speech, unsafe_allow_html=True)
+    st.info("🔊 Audio transmission sent directly to browser stream engine.")
 
 # ==========================================
 # DATABASE MEMORY LAYER
@@ -135,7 +135,7 @@ def ask_nova_core(user_input):
     messages = [
         {
             "role": "system", 
-            "content": f"{system_gender_prompt} You are talking to your creator, Boss Aditya. Maintain your highly conversational, helpful, and sharp AI tone."
+            "content": f"{system_gender_prompt} You are talking to your creator, Boss Aditya. Keep answers short, conversational, and crisp."
         }
     ]
     
@@ -157,7 +157,7 @@ def ask_nova_core(user_input):
 # ==========================================
 init_memory_db()
 
-st.subheader("PHASE 3 — UNRESTRICTED HYBRID VOCAL LAYER")
+st.subheader("PHASE 3 — DUAL VOCAL LAYER ONLINE")
 
 display_memories = load_recent_memory(limit=20)
 for msg in display_memories:
@@ -179,6 +179,7 @@ if user_query := st.chat_input("Enter command..."):
     with st.chat_message("assistant"):
         st.write("**N.O.V.A.**")
         st.write(reply)
+        # Drops the player interface directly into the chat container
+        speak_text(reply, SELECTED_VOICE_ID, LANG_CODE)
         
     save_to_memory("N.O.V.A.", reply)
-    speak_text(reply, SELECTED_VOICE_ID, LANG_CODE)
