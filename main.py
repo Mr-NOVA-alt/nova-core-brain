@@ -3,7 +3,7 @@ import requests
 import json
 import sqlite3
 import streamlit as st
-from gtts import gTTS  # Text-to-Speech Engine
+from gtts import gTTS
 import base64
 
 # ==========================================
@@ -22,25 +22,22 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ==========================================
-# VOICE LOGIC ENGINE
+# FIX: SINGLE TRANSMISSION VOICE ENGINE
 # ==========================================
 def speak_text(text):
-    """Generates an audio stream for mobile browser playback."""
+    """Generates audio only for the immediate message."""
     try:
-        # Convert text to speech using a clear AI synthesizer
-        tts = gTTS(text=text, lang='en', tld='com', slow=False)
+        # Clean text slightly to keep things brief for audio
+        clean_text = text.replace("N.O.V.A. Response:", "").strip()
+        tts = gTTS(text=clean_text, lang='en', tld='com', slow=False)
         tts.save("response.mp3")
         
-        # Encode audio to base64 so it plays natively inside the web page
         with open("response.mp3", "rb") as f:
             audio_bytes = f.read()
         audio_base64 = base64.b64encode(audio_bytes).decode()
         audio_html = f'<audio autoplay src="data:audio/mp3;base64,{audio_base64}">'
         
-        # Inject the auto-play audio tag into the interface
         st.markdown(audio_html, unsafe_allow_html=True)
-        
-        # Clean up the local temp file safely
         os.remove("response.mp3")
     except Exception as e:
         st.error(f"Voice Matrix Error: {e}")
@@ -94,7 +91,7 @@ def ask_nova_core(user_input):
     messages = [
         {
             "role": "system", 
-            "content": "You are N.O.V.A., an advanced software engineering AI core with a voice interface enabled. Keep your answers concise, clear, and punchy since they will be read aloud."
+            "content": "You are N.O.V.A., an advanced software engineering AI core. Respond crisply and naturally, directly answering the user."
         }
     ]
     
@@ -142,5 +139,5 @@ if user_query := st.chat_input("Enter command..."):
         
     save_to_memory("N.O.V.A.", reply)
     
-    # Fire up the vocal matrix to read his response aloud!
+    # This now only runs exactly once right when the button is hit!
     speak_text(reply)
