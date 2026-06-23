@@ -34,7 +34,7 @@ def load_recent_memory(limit=10):
     conn.close()
     formatted_history = []
     for sender, msg in reversed(rows):
-        formatted_history.append({"role": "user" if sender == "Boss Aditya" else "assistant", "content": msg})
+        formatted_history.append({"role": "user" if sender == "You" else "assistant", "content": msg})
     return formatted_history
 
 def ask_nova_core(user_input):
@@ -46,7 +46,7 @@ def ask_nova_core(user_input):
     messages = [
         {
             "role": "system", 
-            "content": "You are N.O.V.A., an advanced software engineering AI core. Your creator is Boss Aditya. You have a permanent memory module active."
+            "content": "You are N.O.V.A., an advanced software engineering AI core. Your creator is talking to you via a secure terminal. You have a permanent memory module active."
         }
     ]
     past_memories = load_recent_memory(limit=8)
@@ -79,11 +79,11 @@ if __name__ == "__main__":
         print("System: Connection secure. Memory database synchronized.")
         while True:
             try:
-                user_input = input("\nBoss Aditya: ")
+                user_input = input("\nYou: ")
                 if user_input.lower() in ["exit", "quit", "powerdown"]:
                     print("Shutting down core systems safely...")
                     break
-                save_to_memory("Boss Aditya", user_input)
+                save_to_memory("You", user_input)
                 print("\n[N.O.V.A. calculating...]")
                 reply = ask_nova_core(user_input)
                 print(f"\nN.O.V.A.:\n{reply}")
