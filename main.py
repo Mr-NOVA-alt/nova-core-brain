@@ -90,3 +90,4 @@ if __name__ == "__main__":
                 save_to_memory("N.O.V.A.", reply)
             except KeyboardInterrupt:
                 break
+
