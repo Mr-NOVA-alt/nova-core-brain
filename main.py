@@ -34,7 +34,6 @@ voice_profile = st.radio(
     horizontal=True
 )
 
-# Selecting high-quality, ultra-realistic premium cloud voices
 if "Female" in voice_profile:
     VOICE_ID = "en-US-AvaNeural"
     system_gender_prompt = "You are N.O.V.A., an advanced female software engineering AI core."
@@ -43,24 +42,37 @@ else:
     system_gender_prompt = "You are N.O.V.A., operating on your secondary male vocal matrix module."
 
 # ==========================================
-# TEXT CLEANING ENGINE (STOP EMOJI READING)
+# BULLETPROOF EMOJI STRIPPER ENGINE
 # ==========================================
 def clean_text_for_speech(text):
-    """Filters out markdown, emojis, and special symbols so the voice sounds natural."""
-    # Remove system labels
+    """Aggressively purges all emojis, markdown, and code blocks from audio stream."""
     text = text.replace("N.O.V.A. Response:", "").strip()
-    # Strip out standard markdown formatting like asterisks or code blocks
+    
+    # Strip down code blocks and markdown symbols
+    text = re.sub(r'```.*?```', ' [Code block omitted] ', text, flags=re.DOTALL)
     text = re.sub(r'\*+', '', text)
-    text = re.sub(r'```.*?```', '[Code block skipped]', text, flags=re.DOTALL)
-    # Filter out emojis completely so the TTS engine doesn't read them literally
-    text = re.sub(r'[\u2600-\u27BF|[\u2000-\u3300]|[\uD83C-\uD83E][\uDC00-\uDFFF]', '', text)
+    text = re.sub(r'`', '', text)
+    
+    # Ultimate Master Emoji Filter (Catches all ranges, variations, and modifiers)
+    emoji_pattern = re.compile(
+        r'[\U00010000-\U0010ffff]'  # Supplemental Planes (Most emojis live here)
+        r'|[\u2700-\u27BF]'         # Dingbats
+        r'|[\u2600-\u26FF]'         # Miscellaneous Symbols
+        r'|[\u2B50-\u2B55]'         # Stars and Shapes
+        r'|[\u2000-\u3300]'         # General Punctuation & CJK symbols
+        r'|[\uE000-\uF8FF]'         # Private Use Area
+    )
+    text = emoji_pattern.sub('', text)
+    
+    # Clean up double spaces left behind by deleted emojis
+    text = re.sub(r'\s+', ' ', text).strip()
     return text
 
 # ==========================================
 # HIGH-SPEED NATURAL AUDIO ENGINE
 # ==========================================
 async def generate_voice(text, voice):
-    """Generates a premium cloud voice asset asynchronously on the fly."""
+    """Generates premium cloud voice asset asynchronously on the fly."""
     cleaned = clean_text_for_speech(text)
     communicate = edge_tts.Communicate(cleaned, voice)
     audio_stream = io.BytesIO()
@@ -71,14 +83,11 @@ async def generate_voice(text, voice):
     return audio_stream
 
 def speak_text_premium(text, voice):
-    """Executes the voice generation and runs it with instant browser auto-play."""
+    """Executes voice engine generation with browser autoplay integration."""
     try:
-        # Run the async generator inside Streamlit's synchronous ecosystem
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         audio_data = loop.run_until_complete(generate_voice(text, voice))
-        
-        # Pushes an elegant native player into the message block with autoplay active
         st.audio(audio_data, format="audio/mp3", autoplay=True)
     except Exception as e:
         st.error(f"Vocal Core Interrupted: {e}")
@@ -176,7 +185,6 @@ if user_query := st.chat_input("Enter command..."):
     with st.chat_message("assistant"):
         st.write("**N.O.V.A.**")
         st.write(reply)
-        # Fires off the clean voice engine without emoji readings
         speak_text_premium(reply, VOICE_ID)
         
     save_to_memory("N.O.V.A.", reply)
