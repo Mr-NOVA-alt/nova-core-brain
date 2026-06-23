@@ -14,59 +14,118 @@ import re
 OPENROUTER_KEY = os.environ.get("OPENROUTER_API_KEY")
 DB_FILE = "nova_memory.db"
 
-st.set_page_config(page_title="N.O.V.A. DASHBOARD", page_icon="🟢", layout="centered")
+st.set_page_config(page_title="N.O.V.A. MULTI-MATRIX", page_icon="🌈", layout="centered")
 
 # ==========================================
-# PREMIUM NEON GLOW UI CUSTOMIZATION
+# DYNAMIC THEME MATRIX SELECTOR
 # ==========================================
-st.markdown("""
+st.sidebar.title("🎨 MATRIX THEME CONTROL")
+ui_theme = st.sidebar.selectbox(
+    "CHOOSE CORE EMISSION COLOR:",
+    ["Dynamic Rainbow 🌈", "Cyber Red 🔴", "Neon Green 🟢", "Deep Blue 🔵"]
+)
+
+# Map selections to CSS variables
+if "Rainbow" in ui_theme:
+    accent_color = "linear-gradient(90deg, #ff3355, #ff9933, #00ff66, #00ffff, #3355ff, #9933ff)"
+    text_accent = "#00ffff"
+    box_glow = "animation: rainbow-glow 4s linear infinite;"
+    bg_gradient = "radial-gradient(circle, #0b0512 0%, #020104 100%)"
+elif "Red" in ui_theme:
+    accent_color = "#ff3355"
+    text_accent = "#ff3355"
+    box_glow = "box-shadow: 0 0 15px rgba(255, 51, 85, 0.4); border: 2px solid #ff3355;"
+    bg_gradient = "radial-gradient(circle, #120508 0%, #040102 100%)"
+elif "Green" in ui_theme:
+    accent_color = "#00ff66"
+    text_accent = "#00ff66"
+    box_glow = "box-shadow: 0 0 15px rgba(0, 255, 102, 0.4); border: 2px solid #00ff66;"
+    bg_gradient = "radial-gradient(circle, #051208 0%, #010402 100%)"
+else:
+    accent_color = "#3355ff"
+    text_accent = "#3355ff"
+    box_glow = "box-shadow: 0 0 15px rgba(51, 85, 255, 0.4); border: 2px solid #3355ff;"
+    bg_gradient = "radial-gradient(circle, #050812 0%, #010204 100%)"
+
+# ==========================================
+# CUSTOM INJECTED CSS ARCHITECTURE
+# ==========================================
+st.markdown(f"""
     <style>
-    /* Neon Cyberpunk Glow Theme */
-    .stApp { 
-        background: radial-gradient(circle, #090d16 0%, #020408 100%); 
-        color: #00ff66; 
-    }
-    /* Glow text headers */
-    h1, h2, h3 {
-        text-shadow: 0 0 10px #00ff66, 0 0 20px #00ff66;
+    /* Base Engine Background */
+    .stApp {{ 
+        background: {bg_gradient}; 
+        color: #ffffff; 
+    }}
+    
+    /* Rainbow text animations */
+    @keyframes rainbow-text-animation {{
+        0% {{ color: #ff3355; text-shadow: 0 0 8px #ff3355; }}
+        17% {{ color: #ff9933; text-shadow: 0 0 8px #ff9933; }}
+        33% {{ color: #00ff66; text-shadow: 0 0 8px #00ff66; }}
+        50% {{ color: #00ffff; text-shadow: 0 0 8px #00ffff; }}
+        67% {{ color: #3355ff; text-shadow: 0 0 8px #3355ff; }}
+        84% {{ color: #9933ff; text-shadow: 0 0 8px #9933ff; }}
+        100% {{ color: #ff3355; text-shadow: 0 0 8px #ff3355; }}
+    }}
+
+    @keyframes rainbow-glow {{
+        0% {{ border-color: #ff3355; box-shadow: 0 0 12px #ff3355; }}
+        33% {{ border-color: #00ff66; box-shadow: 0 0 12px #00ff66; }}
+        66% {{ border-color: #3355ff; box-shadow: 0 0 12px #3355ff; }}
+        100% {{ border-color: #ff3355; box-shadow: 0 0 12px #ff3355; }}
+    }}
+
+    /* Apply Dynamic Theme to Headers */
+    h1, h2, h3 {{
         color: #ffffff !important;
-    }
-    /* Input Box styling */
-    .stTextInput>div>div>input { 
-        background-color: #111622 !important; 
-        color: #00ff66 !important; 
-        border: 2px solid #00ff66 !important;
-        box-shadow: 0 0 10px rgba(0, 255, 102, 0.2);
+        text-shadow: 0 0 10px {text_accent if "Rainbow" not in ui_theme else "#ff3355"};
+    }}
+
+    /* 👑 BOSS ADITYA SPECIAL RAINBOW USER TAG */
+    .boss-tag {{
+        animation: rainbow-text-animation 3s linear infinite;
+        font-weight: bold;
+        font-size: 1.1rem;
+    }}
+
+    /* Input Box styling custom injection */
+    .stTextInput>div>div>input {{ 
+        background-color: #0e1118 !important; 
+        color: #ffffff !important; 
         border-radius: 10px;
-    }
-    /* Chat bubbles with neon trim */
-    div.stChatMessage { 
-        background-color: #0b111e !important; 
-        border: 1px solid #00ff66 !important; 
+        border: 2px solid #ffffff;
+        {box_glow}
+    }}
+
+    /* Chat message bubble styling wrappers */
+    div.stChatMessage {{ 
+        background-color: #0c0f16 !important; 
         border-radius: 12px !important;
-        box-shadow: 0 0 8px rgba(0, 255, 102, 0.1);
         margin-bottom: 15px;
-    }
-    /* Custom shortcut button styling */
-    .stButton>button {
-        background-color: #111622 !important;
-        color: #00ff66 !important;
-        border: 1px solid #00ff66 !important;
+        border: 1px solid {text_accent if "Rainbow" not in ui_theme else "#ff3355"};
+    }}
+
+    /* Button formatting styles */
+    .stButton>button {{
+        background-color: #0c0f16 !important;
+        color: #ffffff !important;
+        border: 1px solid {text_accent if "Rainbow" not in ui_theme else "#ff3355"} !important;
         border-radius: 8px !important;
-        transition: all 0.3s ease;
-    }
-    .stButton>button:hover {
-        background-color: #00ff66 !important;
-        color: #020408 !important;
-        box-shadow: 0 0 15px #00ff66;
-    }
+    }}
+    .stButton>button:hover {{
+        background: {accent_color if "Rainbow" in ui_theme else "transparent"} !important;
+        background-color: {accent_color if "Rainbow" not in ui_theme else "none"} !important;
+        color: #ffffff !important;
+        box-shadow: 0 0 15px #ffffff;
+    }}
     </style>
 """, unsafe_allow_html=True)
 
 # ==========================================
 # UI MULTI-VOICE MATRIX TOGGLE
 # ==========================================
-st.title("🟢 N.O.V.A. SUPREME")
+st.title("⚡ N.O.V.A. CORE")
 
 voice_profile = st.radio(
     "SELECT ACTIVE VOCAL CORE:",
@@ -104,12 +163,11 @@ st.markdown("---")
 # TEXT CLEANING ENGINE
 # ==========================================
 def clean_text_for_speech(text):
-    """Filters data for maximum speed and clear pronunciation."""
     text = text.replace("N.O.V.A. Response:", "").strip()
     text = re.sub(r'```.*?```', ' [Code matrix updated] ', text, flags=re.DOTALL)
     text = re.sub(r'\*+', '', text)
     text = re.sub(r'`', '', text)
-    text = re.sub(r'([a-zA-Z])\1{2,}', r'\1\1', text) # Clean word stretching
+    text = re.sub(r'([a-zA-Z])\1{2,}', r'\1\1', text)
     
     emoji_pattern = re.compile(r'[\U00010000-\U0010ffff]|[\u2700-\u27BF]|[\u2600-\u26FF]|[\u2B50-\u2B55]')
     text = emoji_pattern.sub('', text)
@@ -153,7 +211,7 @@ def save_to_memory(sender, message):
     conn.commit()
     conn.close()
 
-def load_recent_memory(limit=6): # Lower limit for extreme loading speeds
+def load_recent_memory(limit=6):
     conn = sqlite3.connect(DB_FILE)
     cursor = conn.cursor()
     cursor.execute("SELECT sender, message FROM chat_history ORDER BY id DESC LIMIT ?", (limit,))
@@ -183,27 +241,31 @@ def ask_nova_core(user_input):
 # ==========================================
 init_memory_db()
 
-# Load logs
+# Load logs with Custom HTML Elements
 recent_chats = load_recent_memory(limit=10)
 for msg in recent_chats:
-    label = "You" if msg["role"] == "user" else "N.O.V.A."
-    with st.chat_message(msg["role"]):
-        st.write(f"**{label}**")
-        st.write(msg["content"])
+    if msg["role"] == "user":
+        with st.chat_message("user"):
+            st.markdown('<span class="boss-tag">✨ BOSS ADITYA 👑</span>', unsafe_allow_html=True)
+            st.write(msg["content"])
+    else:
+        with st.chat_message("assistant"):
+            st.write("**N.O.V.A.**")
+            st.write(msg["content"])
 
-# Capture standard text bar OR quick-tap VIP panel keys
+# Capture system input streams
 user_query = st.chat_input("Enter core command...")
 if shortcut_command:
     user_query = shortcut_command
 
 if user_query:
     with st.chat_message("user"):
-        st.write("**You**")
+        st.markdown('<span class="boss-tag">✨ BOSS ADITYA 👑</span>', unsafe_allow_html=True)
         st.write(user_query)
     
     save_to_memory("You", user_query)
     
-    with st.spinner("Streaming response core..."):
+    with st.spinner("Streaming spectrum matrix..."):
         reply = ask_nova_core(user_query)
         
     with st.chat_message("assistant"):
