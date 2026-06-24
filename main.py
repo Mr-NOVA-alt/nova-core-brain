@@ -85,7 +85,7 @@ voice_profile = st.radio(
 
 if "Female" in voice_profile:
     VOICE_ID = "en-IN-NeerjaNeural"
-    system_gender_prompt = "You are N.O.V.A., an advanced female software engineering AI core based in India. Keep answers conversational and fast."
+    system_gender_prompt = "You are N.O.V.A., an advanced female software engineering AI core based in India. Keep answers conversational, hyper-intelligent, and extremely fast."
 else:
     VOICE_ID = "en-IN-PrabhatNeural"
     system_gender_prompt = "You are N.O.V.A., operating on your secondary male vocal matrix module based in India."
@@ -115,7 +115,6 @@ st.write("### 🛠️ CYBER INPUT CONSOLE")
 uploaded_b64_image = None
 image_mime_type = None
 
-# Hard-rendering file uploader with clear visual cues
 uploaded_file = st.file_uploader("📷 [ADD PHOTO] ATTACH MEDIA ASSET:", type=["png", "jpg", "jpeg"])
 if uploaded_file is not None:
     image_bytes = uploaded_file.read()
@@ -123,12 +122,10 @@ if uploaded_file is not None:
     uploaded_b64_image = base64.b64encode(image_bytes).decode('utf-8')
     st.image(image_bytes, caption="Buffered Vision Stream", width=250)
 
-# Native microphone component mapping directly to app interface
 audio_file = st.audio_input("🎤 [MIC INTERCOM] TAP TO CAPTURE VOICE:")
 if audio_file is not None:
     st.success("STS Audio Transceiver Block Latched!")
 
-# Real-Time Prompt Photo Generator Lab Terminal
 st.write("### 🎨 IMAGE GENERATION PROTOCOL")
 img_prompt = st.text_input("Describe the image you want to create:", placeholder="e.g. neon wolf wearing headphones")
 if st.button("🚀 Execute Photo Render"):
@@ -155,7 +152,7 @@ def clean_text_for_speech(text):
     return re.sub(r'\s+', ' ', text).strip()
 
 async def generate_voice(text, voice):
-    # Running at +25% conversational speed to fix slow pronunciation loops
+    # Running at +25% conversational speed
     communicate = edge_tts.Communicate(clean_text_for_speech(text), voice, rate="+25%")
     audio_stream = io.BytesIO()
     async for chunk in communicate.stream():
@@ -199,13 +196,13 @@ def load_recent_memory(limit=6):
     return [{"role": "user" if s == "You" else "assistant", "content": m} for s, m in reversed(rows)]
 
 # ==========================================
-# OPENROUTER BRAIN LAYER (INTELLIGENT ROUTING)
+# OPENROUTER BRAIN LAYER (ROBUST DATA PARSING)
 # ==========================================
 def ask_nova_core(user_input, b64_img=None, mime_type=None):
     url = "https://openrouter.ai/api/v1/chat/completions"
     headers = {"Authorization": f"Bearer {OPENROUTER_KEY}", "Content-Type": "application/json"}
     
-    # Intelligently loads standard models or vision model structures based on context
+    # Vision models use gemini framework fallback
     selected_model = "google/gemini-2.5-flash" if b64_img else "deepseek/deepseek-chat"
     system_message = {"role": "system", "content": system_gender_prompt}
     
@@ -223,7 +220,16 @@ def ask_nova_core(user_input, b64_img=None, mime_type=None):
 
     try:
         res = requests.post(url, headers=headers, json={"model": selected_model, "messages": messages}, timeout=15)
-        return res.json()["choices"][0]["message"]["content"]
+        response_json = res.json()
+        
+        # Robust check to prevent the 'choices' extraction error crash
+        if "choices" in response_json and len(response_json["choices"]) > 0:
+            return response_json["choices"][0]["message"]["content"]
+        elif "error" in response_json:
+            return f"OpenRouter Matrix Error: {response_json['error'].get('message', 'Unknown failure')}"
+        else:
+            return f"Unexpected API Data Structure: {str(response_json)}"
+            
     except Exception as e:
         return f"Core Link Offline: {e}"
 
