@@ -29,7 +29,6 @@ ui_theme = st.sidebar.selectbox(
     ["Dynamic Rainbow 🌈", "Cyber Red 🔴", "Neon Green 🟢", "Deep Blue 🔵"]
 )
 
-# Configuration mapping for CSS and JS injected core
 if "Rainbow" in ui_theme:
     accent_color = "linear-gradient(90deg, #ff3355, #ff9933, #00ff66, #00ffff, #3355ff, #9933ff)"
     text_accent = "#00ffff"
@@ -85,83 +84,123 @@ st.markdown(f"""
         color: #00ff66 !important;
         margin-top: 10px;
     }}
+    /* Top Right Floating HUD Clock Styling */
+    .hud-clock {{
+        position: absolute;
+        top: 10px;
+        right: 15px;
+        font-family: 'Courier New', Courier, monospace;
+        font-size: 14px;
+        color: #ffffff;
+        background: rgba(12, 15, 22, 0.7);
+        padding: 6px 12px;
+        border-radius: 6px;
+        border: 1px solid {text_accent if "Rainbow" not in ui_theme else "#00ffff"};
+        z-index: 99999;
+        text-shadow: 0 0 5px {text_accent if "Rainbow" not in ui_theme else "#00ffff"};
+    }}
     </style>
 """, unsafe_allow_html=True)
 
+# Initialize conversational state flag
+if "is_speaking" not in st.session_state:
+    st.session_state.is_speaking = False
+
 # ==========================================
-# UI MULTI-VOICE CORE TOGGLE
+# LIVE CORNER CHRONOMETER HUD & ARC CORE
 # ==========================================
 st.title("⚡ N.O.V.A. MULTI-MATRIX")
 
-# NATIVE HIGH-TECH INTERACTIVE AUDIO CORE WIDGET
+is_speaking_js = "true" if st.session_state.is_speaking else "false"
+
 core_html = f"""
+<div class="hud-clock" id="liveClock">SYSTEM TIME: LOADING...</div>
+
 <div style="display: flex; justify-content: center; align-items: center; background: transparent; height: 260px;">
     <canvas id="jarvisCore" width="250" height="250"></canvas>
 </div>
+
 <script>
+    // Live Time Matrix Function
+    function updateHUDTime() {{
+        const now = new Date();
+        const timeString = now.toTimeString().split(' ')[0];
+        document.getElementById('liveClock').innerText = "SYSTEM TIME: " + timeString;
+    }}
+    setInterval(updateHUDTime, 1000);
+    updateHUDTime();
+
+    // Core Orb Visualizer Rendering
     const canvas = document.getElementById('jarvisCore');
     const ctx = canvas.getContext('2d');
     let angle = 0;
     let pulse = 0;
     let themeColor = "{core_color_js}";
+    let isSpeaking = {is_speaking_js};
 
     function drawCore() {{
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         const cx = canvas.width / 2;
         const cy = canvas.height / 2;
-        pulse += 0.04;
-        let scale = 1 + Math.sin(pulse) * 0.06;
+        
+        // Dynamically alter the scale factor if AI is running calculations / speaking
+        let pulseSpeed = isSpeaking ? 0.15 : 0.04;
+        pulse += pulseSpeed;
+        
+        let amplitude = isSpeaking ? 0.22 : 0.06;
+        let scale = 1 + Math.sin(pulse) * amplitude;
 
-        // Establish Color Gradients
         let color1, color2;
         if(themeColor === "rainbow") {{
             let hue = (Date.now() / 20) % 360;
             color1 = `hsla(${{hue}}, 100%, 60%, 0.9)`;
-            color2 = `hsla(${{(hue + 60) % 360}}, 100%, 50%, 0.4)`;
         }} else {{
             color1 = themeColor;
-            color2 = "rgba(0,0,0,0)";
         }}
 
-        // Draw Outer Frequency Ring Line
+        // Main Wave Ring Casing
         ctx.strokeStyle = color1;
-        ctx.lineWidth = 2;
-        ctx.shadowBlur = 15;
+        ctx.lineWidth = isSpeaking ? 4 : 2;
+        ctx.shadowBlur = isSpeaking ? 25 : 15;
         ctx.shadowColor = color1;
         ctx.beginPath();
         ctx.arc(cx, cy, 75 * scale, 0, Math.PI * 2);
         ctx.stroke();
 
-        // Draw Orbiting Ring Nodes
+        // Orbiting System Tracker Nodes
         ctx.save();
         ctx.translate(cx, cy);
         ctx.rotate(angle);
         ctx.fillStyle = color1;
         for (let i = 0; i < 4; i++) {{
             ctx.beginPath();
-            ctx.arc(75 * scale, 0, 4, 0, Math.PI * 2);
+            ctx.arc(75 * scale, 0, isSpeaking ? 6 : 4, 0, Math.PI * 2);
             ctx.fill();
             ctx.rotate(Math.PI / 2);
         }}
         ctx.restore();
 
-        // Glowing Core Orb Center
-        let grad = ctx.createRadialGradient(cx, cy, 5, cx, cy, 45 * scale);
+        // High-Density Core Mass Center
+        let grad = ctx.createRadialGradient(cx, cy, 5, cx, cy, (isSpeaking ? 55 : 45) * scale);
         grad.addColorStop(0, '#ffffff');
-        grad.addColorStop(0.2, color1);
+        grad.addColorStop(0.3, color1);
         grad.addColorStop(1, 'rgba(0,0,0,0)');
         ctx.fillStyle = grad;
         ctx.beginPath();
-        ctx.arc(cx, cy, 45 * scale, 0, Math.PI * 2);
+        ctx.arc(cx, cy, (isSpeaking ? 55 : 45) * scale, 0, Math.PI * 2);
         ctx.fill();
 
-        angle += 0.015;
+        angle += isSpeaking ? 0.045 : 0.015;
         requestAnimationFrame(drawCore);
     }}
     drawCore();
 </script>
 """
 components.html(core_html, height=270)
+
+# Reset speech indicator flag right after rendering the visual state frame
+if st.session_state.is_speaking:
+    st.session_state.is_speaking = False
 
 voice_profile = st.radio(
     "SELECT ACTIVE VOCAL CORE:",
@@ -171,10 +210,11 @@ voice_profile = st.radio(
 
 if "Female" in voice_profile:
     VOICE_ID = "en-IN-NeerjaNeural"
-    system_gender_prompt = "You are N.O.V.A., an advanced real-world assistant like Jarvis. Keep answers concise, highly intelligent, and conversational."
+    # FIXED DIRECTIVE: Locked core loyalty directly to Boss Aditya
+    system_gender_prompt = "You are N.O.V.A., an advanced real-world assistant like Jarvis. You are deeply loyal ONLY to your creator, Boss Aditya. You remember him perfectly. Keep answers brief, smart, and hyper-intelligent."
 else:
     VOICE_ID = "en-IN-PrabhatNeural"
-    system_gender_prompt = "You are N.O.V.A., operating on your secondary male vocal module."
+    system_gender_prompt = "You are N.O.V.A., operating on your secondary male vocal module. Your creator and only master is Boss Aditya."
 
 # ==========================================
 # BOSS ADITYA VIP PANEL
@@ -338,9 +378,12 @@ if user_query:
         st.write(user_query)
     save_to_memory("You", user_query)
     
+    # Enable speaking flag to scale core dynamics during text streaming process
+    st.session_state.is_speaking = True
+    
     with st.spinner("Streaming spectrum matrix..."):
         if "write code" in user_query.lower() or "generate code" in user_query.lower() or "fibonacci" in user_query.lower():
-            reply = "Sure, Boss! I will write the code live for you right now."
+            reply = "Welcome back, Boss Aditya! Writing code to the simulated console node live."
             with st.chat_message("assistant"):
                 st.write("**N.O.V.A.**")
                 st.write(reply)
@@ -368,5 +411,5 @@ def fibonacci(n):
                 speak_text_premium(reply, VOICE_ID)
             save_to_memory("N.O.V.A.", reply)
             
-    if shortcut_command:
-        st.rerun()
+    # Trigger interface re-run immediately to pass the pulsing core state fluidly
+    st.rerun()
