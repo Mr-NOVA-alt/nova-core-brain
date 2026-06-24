@@ -7,6 +7,8 @@ import asyncio
 import edge_tts
 import io
 import re
+import urllib.parse
+import base64
 
 # ==========================================
 # CONSTANTS & CONFIGURATION
@@ -25,7 +27,6 @@ ui_theme = st.sidebar.selectbox(
     ["Dynamic Rainbow 🌈", "Cyber Red 🔴", "Neon Green 🟢", "Deep Blue 🔵"]
 )
 
-# Map selections to CSS variables
 if "Rainbow" in ui_theme:
     accent_color = "linear-gradient(90deg, #ff3355, #ff9933, #00ff66, #00ffff, #3355ff, #9933ff)"
     text_accent = "#00ffff"
@@ -47,78 +48,27 @@ else:
     box_glow = "box-shadow: 0 0 15px rgba(51, 85, 255, 0.4); border: 2px solid #3355ff;"
     bg_gradient = "radial-gradient(circle, #050812 0%, #010204 100%)"
 
-# ==========================================
-# CUSTOM INJECTED CSS ARCHITECTURE
-# ==========================================
 st.markdown(f"""
     <style>
-    /* Base Engine Background */
-    .stApp {{ 
-        background: {bg_gradient}; 
-        color: #ffffff; 
-    }}
-    
-    /* Rainbow text animations */
+    .stApp {{ background: {bg_gradient}; color: #ffffff; }}
     @keyframes rainbow-text-animation {{
         0% {{ color: #ff3355; text-shadow: 0 0 8px #ff3355; }}
-        17% {{ color: #ff9933; text-shadow: 0 0 8px #ff9933; }}
         33% {{ color: #00ff66; text-shadow: 0 0 8px #00ff66; }}
-        50% {{ color: #00ffff; text-shadow: 0 0 8px #00ffff; }}
-        67% {{ color: #3355ff; text-shadow: 0 0 8px #3355ff; }}
-        84% {{ color: #9933ff; text-shadow: 0 0 8px #9933ff; }}
+        66% {{ color: #3355ff; text-shadow: 0 0 8px #3355ff; }}
         100% {{ color: #ff3355; text-shadow: 0 0 8px #ff3355; }}
     }}
-
     @keyframes rainbow-glow {{
         0% {{ border-color: #ff3355; box-shadow: 0 0 12px #ff3355; }}
         33% {{ border-color: #00ff66; box-shadow: 0 0 12px #00ff66; }}
         66% {{ border-color: #3355ff; box-shadow: 0 0 12px #3355ff; }}
         100% {{ border-color: #ff3355; box-shadow: 0 0 12px #ff3355; }}
     }}
-
-    /* Apply Dynamic Theme to Headers */
-    h1, h2, h3 {{
-        color: #ffffff !important;
-        text-shadow: 0 0 10px {text_accent if "Rainbow" not in ui_theme else "#ff3355"};
-    }}
-
-    /* 👑 BOSS ADITYA SPECIAL RAINBOW USER TAG */
-    .boss-tag {{
-        animation: rainbow-text-animation 3s linear infinite;
-        font-weight: bold;
-        font-size: 1.1rem;
-    }}
-
-    /* Input Box styling custom injection */
-    .stTextInput>div>div>input {{ 
-        background-color: #0e1118 !important; 
-        color: #ffffff !important; 
-        border-radius: 10px;
-        border: 2px solid #ffffff;
-        {box_glow}
-    }}
-
-    /* Chat message bubble styling wrappers */
-    div.stChatMessage {{ 
-        background-color: #0c0f16 !important; 
-        border-radius: 12px !important;
-        margin-bottom: 15px;
-        border: 1px solid {text_accent if "Rainbow" not in ui_theme else "#ff3355"};
-    }}
-
-    /* Button formatting styles */
-    .stButton>button {{
-        background-color: #0c0f16 !important;
-        color: #ffffff !important;
-        border: 1px solid {text_accent if "Rainbow" not in ui_theme else "#ff3355"} !important;
-        border-radius: 8px !important;
-    }}
-    .stButton>button:hover {{
-        background: {accent_color if "Rainbow" in ui_theme else "transparent"} !important;
-        background-color: {accent_color if "Rainbow" not in ui_theme else "none"} !important;
-        color: #ffffff !important;
-        box-shadow: 0 0 15px #ffffff;
-    }}
+    h1, h2, h3 {{ color: #ffffff !important; text-shadow: 0 0 10px {text_accent if "Rainbow" not in ui_theme else "#ff3355"}; }}
+    .boss-tag {{ animation: rainbow-text-animation 3s linear infinite; font-weight: bold; font-size: 1.1rem; }}
+    .stTextInput>div>div>input {{ background-color: #0e1118 !important; color: #ffffff !important; border-radius: 10px; border: 2px solid #ffffff; {box_glow} }}
+    div.stChatMessage {{ background-color: #0c0f16 !important; border-radius: 12px !important; margin-bottom: 15px; border: 1px solid {text_accent if "Rainbow" not in ui_theme else "#ff3355"}; }}
+    .stButton>button {{ background-color: #0c0f16 !important; color: #ffffff !important; border: 1px solid {text_accent if "Rainbow" not in ui_theme else "#ff3355"} !important; border-radius: 8px !important; }}
+    .stButton>button:hover {{ background: {accent_color if "Rainbow" in ui_theme else "transparent"} !important; background-color: {accent_color if "Rainbow" not in ui_theme else "none"} !important; color: #ffffff !important; box-shadow: 0 0 15px #ffffff; }}
     </style>
 """, unsafe_allow_html=True)
 
@@ -135,18 +85,18 @@ voice_profile = st.radio(
 
 if "Female" in voice_profile:
     VOICE_ID = "en-IN-NeerjaNeural"
-    system_gender_prompt = "You are N.O.V.A., an advanced female software engineering AI core based in India."
+    system_gender_prompt = "You are N.O.V.A., an advanced female software engineering AI core. You are talking to your creator, Boss Aditya. Answer in a fast, conversational tone."
 else:
     VOICE_ID = "en-IN-PrabhatNeural"
     system_gender_prompt = "You are N.O.V.A., operating on your secondary male vocal matrix module based in India."
 
 # ==========================================
-# BOSS DASHBOARD & EMOJI SHORTCUTS
+# BOSS ADITYA VIP DASHBOARD PANELS
 # ==========================================
 st.write("### 💻 BOSS ADITYA VIP PANEL")
 col1, col2, col3 = st.columns(3)
-
 shortcut_command = None
+
 with col1:
     if st.button("🤖 AI Mode Active"):
         shortcut_command = "Initialize full tactical AI developer protocol mode."
@@ -157,10 +107,44 @@ with col3:
     if st.button("🎯 Core Health Check"):
         shortcut_command = "Give me a quick status report on your systems."
 
+# ==========================================
+# MULTIMODAL PERIPHERAL INPUT MATRIX
+# ==========================================
+st.write("### 🔌 INPUT ACCESS PORTS (MIC & PHOTO)")
+input_col1, input_col2 = st.columns(2)
+
+uploaded_b64_image = None
+image_mime_type = None
+
+with input_col1:
+    # 🎙️ Live Voice Microphone Capture Port
+    audio_file = st.audio_input("🎤 MIC TRANSCEIVER INPUT:")
+    if audio_file is not None:
+        st.success("Voice recording buffered.")
+
+with input_col2:
+    # ➕ Image Capture & File Upload Matrix Port
+    uploaded_file = st.file_uploader("➕ ATTACH PHOTO TRANSMISSION:", type=["png", "jpg", "jpeg"])
+    if uploaded_file is not None:
+        image_bytes = uploaded_file.read()
+        image_mime_type = uploaded_file.type
+        uploaded_b64_image = base64.b64encode(image_bytes).decode('utf-8')
+        st.image(image_bytes, caption="Buffered Core Vision Asset", use_container_width=True)
+
+st.write("### 🎨 ART GENERATION LAB")
+img_prompt = st.text_input("Imagine an Image Prompt:", placeholder="e.g. cyber cat listening to phonk")
+if st.button("🚀 Generate Cyber Art"):
+    if img_prompt:
+        encoded_prompt = urllib.parse.quote(img_prompt)
+        seed_random = os.urandom(4).hex()
+        image_url = f"https://image.pollinations.ai/p/{encoded_prompt}?width=1024&height=1024&nologo=true&seed={seed_random}"
+        st.image(image_url, caption=f"Generated Asset: {img_prompt}", use_container_width=True)
+        shortcut_command = f"I generated an image artwork for: '{img_prompt}'! React to it!"
+
 st.markdown("---")
 
 # ==========================================
-# TEXT CLEANING ENGINE
+# TEXT CLEANING & SPEED TUNED AUDIO ENGINE
 # ==========================================
 def clean_text_for_speech(text):
     text = text.replace("N.O.V.A. Response:", "").strip()
@@ -168,16 +152,12 @@ def clean_text_for_speech(text):
     text = re.sub(r'\*+', '', text)
     text = re.sub(r'`', '', text)
     text = re.sub(r'([a-zA-Z])\1{2,}', r'\1\1', text)
-    
     emoji_pattern = re.compile(r'[\U00010000-\U0010ffff]|[\u2700-\u27BF]|[\u2600-\u26FF]|[\u2B50-\u2B55]')
     text = emoji_pattern.sub('', text)
     return re.sub(r'\s+', ' ', text).strip()
 
-# ==========================================
-# HIGH-SPEED AUDIO ENGINE
-# ==========================================
 async def generate_voice(text, voice):
-    communicate = edge_tts.Communicate(clean_text_for_speech(text), voice)
+    communicate = edge_tts.Communicate(clean_text_for_speech(text), voice, rate="+25%")
     audio_stream = io.BytesIO()
     async for chunk in communicate.stream():
         if chunk["type"] == "audio":
@@ -220,18 +200,32 @@ def load_recent_memory(limit=6):
     return [{"role": "user" if s == "You" else "assistant", "content": m} for s, m in reversed(rows)]
 
 # ==========================================
-# OPENROUTER BRAIN LAYER
+# OPENROUTER BRAIN LAYER (VISION SUPPORTED)
 # ==========================================
-def ask_nova_core(user_input):
+def ask_nova_core(user_input, b64_img=None, mime_type=None):
     url = "https://openrouter.ai/api/v1/chat/completions"
     headers = {"Authorization": f"Bearer {OPENROUTER_KEY}", "Content-Type": "application/json"}
     
-    messages = [{"role": "system", "content": f"{system_gender_prompt} You are talking to your creator, Boss Aditya. Keep answers short, punchy, conversational, and hyper-intelligent."}]
-    messages.extend(load_recent_memory(limit=6))
-    messages.append({"role": "user", "content": user_input})
+    # Using a model that handles text, instruction, and image analysis natively
+    selected_model = "google/gemini-2.5-flash" if b64_img else "deepseek/deepseek-chat"
+    
+    system_message = {"role": "system", "content": system_gender_prompt}
+    
+    user_content = []
+    if b64_img and mime_type:
+        user_content.append({
+            "type": "image_url",
+            "image_url": {"url": f"data:{mime_type};base64,{b64_img}"}
+        })
+    user_content.append({"type": "text", "text": user_input})
+    
+    messages = [system_message]
+    # Appending regular historical text blocks smoothly
+    messages.extend(load_recent_memory(limit=4))
+    messages.append({"role": "user", "content": user_content if b64_img else user_input})
 
     try:
-        res = requests.post(url, headers=headers, json={"model": "deepseek/deepseek-chat", "messages": messages}, timeout=10)
+        res = requests.post(url, headers=headers, json={"model": selected_model, "messages": messages}, timeout=15)
         return res.json()["choices"][0]["message"]["content"]
     except Exception as e:
         return f"Core Link Offline: {e}"
@@ -241,7 +235,6 @@ def ask_nova_core(user_input):
 # ==========================================
 init_memory_db()
 
-# Load logs with Custom HTML Elements
 recent_chats = load_recent_memory(limit=10)
 for msg in recent_chats:
     if msg["role"] == "user":
@@ -253,7 +246,6 @@ for msg in recent_chats:
             st.write("**N.O.V.A.**")
             st.write(msg["content"])
 
-# Capture system input streams
 user_query = st.chat_input("Enter core command...")
 if shortcut_command:
     user_query = shortcut_command
@@ -266,7 +258,7 @@ if user_query:
     save_to_memory("You", user_query)
     
     with st.spinner("Streaming spectrum matrix..."):
-        reply = ask_nova_core(user_query)
+        reply = ask_nova_core(user_query, uploaded_b64_image, image_mime_type)
         
     with st.chat_message("assistant"):
         st.write("**N.O.V.A.**")
