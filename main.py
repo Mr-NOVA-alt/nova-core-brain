@@ -154,10 +154,8 @@ def auto_correct_code_matrix(raw_code):
         ast.parse(raw_code)
         return raw_code, "Syntax Validated: Stable Build Active."
     except SyntaxError as e:
-        # Self-correction trigger protocol
         correction_prompt = f"The following python code has a syntax error: {e}. Fix it and output only the valid code block clean:\n\n{raw_code}"
         corrected_output = ask_nova_core(correction_prompt)
-        # Extract markdown code block if model returned it wrapped
         code_match = re.search(r'```python(.*?)```', corrected_output, re.DOTALL)
         clean_code = code_match.group(1).strip() if code_match else corrected_output.strip()
         return clean_code, f"Self-Correction Executed: Patched runtime crash vector line {e.lineno}."
@@ -192,20 +190,28 @@ st.markdown("---")
 # ==========================================
 # AUDIO & STORAGE MATRIX ENGINES
 # ==========================================
+def clean_text_for_speech(text):
+    text = re.sub(r'```.*?```', ' [Automation code generated] ', text, flags=re.DOTALL)
+    text = re.sub(r'[*`\s+]', ' ', text).strip()
+    return text
+
+async def generate_voice(text, voice):
+    communicate = edge_tts.Communicate(clean_text_for_speech(text), voice, rate="+25%")
+    audio_stream = io.BytesIO()
+    async for chunk in communicate.stream():
+        if chunk["type"] == "audio":
+            audio_stream.write(chunk["data"])
+    audio_stream.seek(0)
+    return audio_stream
+
 def speak_text_premium(text, voice):
     try:
-        clean_text = re.sub(r'```.*?```', ' [Automation code generated] ', text, flags=re.DOTALL)
-        clean_text = re.sub(r'[*`\s+]', ' ', clean_text).strip()
-        communicate = edge_tts.Communicate(clean_text, voice, rate="+25%")
-        audio_stream = io.BytesIO()
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
-        loop.run_until_complete(st.write("")) # runtime spacer trick
-        for chunk in loop.run_until_complete(communicate.get_audio_chunks()):
-            if chunk[1] == "audio": audio_stream.write(chunk[2])
-        audio_stream.seek(0)
-        st.audio(audio_stream, format="audio/mp3", autoplay=True)
-    except: pass
+        audio_data = loop.run_until_complete(generate_voice(text, voice))
+        st.audio(audio_data, format="audio/mp3", autoplay=True)
+    except:
+        pass
 
 def init_memory_db():
     conn = sqlite3.connect(DB_FILE)
@@ -261,7 +267,6 @@ if user_query:
     with st.spinner("Streaming calculations..."):
         reply = ask_nova_core(user_query, uploaded_b64_image, image_mime_type)
         
-        # Phase 4 Self-Correcting Execution Handler
         if "def " in reply or "import " in reply:
             code_extract = re.search(r'```python(.*?)```', reply, re.DOTALL)
             raw_code = code_extract.group(1).strip() if code_extract else reply
