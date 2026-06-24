@@ -16,10 +16,10 @@ import base64
 OPENROUTER_KEY = os.environ.get("OPENROUTER_API_KEY")
 DB_FILE = "nova_memory.db"
 
-st.set_page_config(page_title="N.O.V.A. MULTI-MATRIX", page_icon="🌈", layout="centered")
+st.set_page_config(page_title="N.O.V.A. CORE V3", page_icon="🌈", layout="centered")
 
 # ==========================================
-# DYNAMIC THEME MATRIX SELECTOR
+# SIDEBAR THEME CONTROL Panel
 # ==========================================
 st.sidebar.title("🎨 MATRIX THEME CONTROL")
 ui_theme = st.sidebar.selectbox(
@@ -85,7 +85,7 @@ voice_profile = st.radio(
 
 if "Female" in voice_profile:
     VOICE_ID = "en-IN-NeerjaNeural"
-    system_gender_prompt = "You are N.O.V.A., an advanced female software engineering AI core. You are talking to your creator, Boss Aditya. Answer in a fast, conversational tone."
+    system_gender_prompt = "You are N.O.V.A., an advanced female software engineering AI core. Keep answers fast and short."
 else:
     VOICE_ID = "en-IN-PrabhatNeural"
     system_gender_prompt = "You are N.O.V.A., operating on your secondary male vocal matrix module based in India."
@@ -110,41 +110,40 @@ with col3:
 # ==========================================
 # MULTIMODAL PERIPHERAL INPUT MATRIX
 # ==========================================
-st.write("### 🔌 INPUT ACCESS PORTS (MIC & PHOTO)")
-input_col1, input_col2 = st.columns(2)
+st.write("### 🔌 INPUT CONTROLS (MIC & PHOTO ATTACHMENT)")
 
 uploaded_b64_image = None
 image_mime_type = None
 
-with input_col1:
-    # 🎙️ Live Voice Microphone Capture Port
-    audio_file = st.audio_input("🎤 MIC TRANSCEIVER INPUT:")
-    if audio_file is not None:
-        st.success("Voice recording buffered.")
+# Using explicit headers and plain fallback forms so symbols display layout cleanly on every mobile browser
+uploaded_file = st.file_uploader("➕ UPLOAD PHOTO MATRIX HERE:", type=["png", "jpg", "jpeg"])
+if uploaded_file is not None:
+    image_bytes = uploaded_file.read()
+    image_mime_type = uploaded_file.type
+    uploaded_b64_image = base64.b64encode(image_bytes).decode('utf-8')
+    st.image(image_bytes, caption="Loaded Input Transmission", width=300)
 
-with input_col2:
-    # ➕ Image Capture & File Upload Matrix Port
-    uploaded_file = st.file_uploader("➕ ATTACH PHOTO TRANSMISSION:", type=["png", "jpg", "jpeg"])
-    if uploaded_file is not None:
-        image_bytes = uploaded_file.read()
-        image_mime_type = uploaded_file.type
-        uploaded_b64_image = base64.b64encode(image_bytes).decode('utf-8')
-        st.image(image_bytes, caption="Buffered Core Vision Asset", use_container_width=True)
+audio_file = st.audio_input("🎤 TAP MIC TO SPEAK:")
+if audio_file is not None:
+    st.info("Audio received and synced.")
 
-st.write("### 🎨 ART GENERATION LAB")
-img_prompt = st.text_input("Imagine an Image Prompt:", placeholder="e.g. cyber cat listening to phonk")
-if st.button("🚀 Generate Cyber Art"):
+# ==========================================
+# 🎨 HIGH-SPEED PHOTO GENERATOR MODULE
+# ==========================================
+st.write("### 🖼️ IMAGE GENERATOR LAB")
+img_prompt = st.text_input("Enter whatever you want to generate:", placeholder="e.g. phonk cat artwork")
+if st.button("🚀 Render Custom Image"):
     if img_prompt:
         encoded_prompt = urllib.parse.quote(img_prompt)
         seed_random = os.urandom(4).hex()
         image_url = f"https://image.pollinations.ai/p/{encoded_prompt}?width=1024&height=1024&nologo=true&seed={seed_random}"
-        st.image(image_url, caption=f"Generated Asset: {img_prompt}", use_container_width=True)
-        shortcut_command = f"I generated an image artwork for: '{img_prompt}'! React to it!"
+        st.image(image_url, caption=f"Generated Image: {img_prompt}", use_container_width=True)
+        shortcut_command = f"I generated an image artwork for: '{img_prompt}'! Confirm that it looks sick."
 
 st.markdown("---")
 
 # ==========================================
-# TEXT CLEANING & SPEED TUNED AUDIO ENGINE
+# AUDIO OUTPUT MATRIX ENGINE
 # ==========================================
 def clean_text_for_speech(text):
     text = text.replace("N.O.V.A. Response:", "").strip()
@@ -157,6 +156,7 @@ def clean_text_for_speech(text):
     return re.sub(r'\s+', ' ', text).strip()
 
 async def generate_voice(text, voice):
+    # Standard sound compression rate for instant speaker response
     communicate = edge_tts.Communicate(clean_text_for_speech(text), voice, rate="+25%")
     audio_stream = io.BytesIO()
     async for chunk in communicate.stream():
@@ -200,15 +200,13 @@ def load_recent_memory(limit=6):
     return [{"role": "user" if s == "You" else "assistant", "content": m} for s, m in reversed(rows)]
 
 # ==========================================
-# OPENROUTER BRAIN LAYER (VISION SUPPORTED)
+# OPENROUTER BRAIN LAYER
 # ==========================================
 def ask_nova_core(user_input, b64_img=None, mime_type=None):
     url = "https://openrouter.ai/api/v1/chat/completions"
     headers = {"Authorization": f"Bearer {OPENROUTER_KEY}", "Content-Type": "application/json"}
     
-    # Using a model that handles text, instruction, and image analysis natively
     selected_model = "google/gemini-2.5-flash" if b64_img else "deepseek/deepseek-chat"
-    
     system_message = {"role": "system", "content": system_gender_prompt}
     
     user_content = []
@@ -220,7 +218,6 @@ def ask_nova_core(user_input, b64_img=None, mime_type=None):
     user_content.append({"type": "text", "text": user_input})
     
     messages = [system_message]
-    # Appending regular historical text blocks smoothly
     messages.extend(load_recent_memory(limit=4))
     messages.append({"role": "user", "content": user_content if b64_img else user_input})
 
