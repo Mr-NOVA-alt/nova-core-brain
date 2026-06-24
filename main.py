@@ -16,10 +16,10 @@ import base64
 OPENROUTER_KEY = os.environ.get("OPENROUTER_API_KEY")
 DB_FILE = "nova_memory.db"
 
-st.set_page_config(page_title="N.O.V.A. CORE V3", page_icon="🌈", layout="centered")
+st.set_page_config(page_title="N.O.V.A. MULTI-MATRIX", page_icon="🌈", layout="centered")
 
 # ==========================================
-# SIDEBAR THEME CONTROL Panel
+# DYNAMIC THEME MATRIX CONTROL
 # ==========================================
 st.sidebar.title("🎨 MATRIX THEME CONTROL")
 ui_theme = st.sidebar.selectbox(
@@ -75,7 +75,7 @@ st.markdown(f"""
 # ==========================================
 # UI MULTI-VOICE MATRIX TOGGLE
 # ==========================================
-st.title("⚡ N.O.V.A. CORE")
+st.title("⚡ N.O.V.A. CORE V3")
 
 voice_profile = st.radio(
     "SELECT ACTIVE VOCAL CORE:",
@@ -85,7 +85,7 @@ voice_profile = st.radio(
 
 if "Female" in voice_profile:
     VOICE_ID = "en-IN-NeerjaNeural"
-    system_gender_prompt = "You are N.O.V.A., an advanced female software engineering AI core. Keep answers fast and short."
+    system_gender_prompt = "You are N.O.V.A., an advanced female software engineering AI core based in India. Keep answers conversational and fast."
 else:
     VOICE_ID = "en-IN-PrabhatNeural"
     system_gender_prompt = "You are N.O.V.A., operating on your secondary male vocal matrix module based in India."
@@ -108,42 +108,41 @@ with col3:
         shortcut_command = "Give me a quick status report on your systems."
 
 # ==========================================
-# MULTIMODAL PERIPHERAL INPUT MATRIX
+# 🔌 HARD-RENDERED MULTIMODAL CONSOLE (STS/STT & PHOTO ACCESS)
 # ==========================================
-st.write("### 🔌 INPUT CONTROLS (MIC & PHOTO ATTACHMENT)")
+st.write("### 🛠️ CYBER INPUT CONSOLE")
 
 uploaded_b64_image = None
 image_mime_type = None
 
-# Using explicit headers and plain fallback forms so symbols display layout cleanly on every mobile browser
-uploaded_file = st.file_uploader("➕ UPLOAD PHOTO MATRIX HERE:", type=["png", "jpg", "jpeg"])
+# Hard-rendering file uploader with clear visual cues
+uploaded_file = st.file_uploader("📷 [ADD PHOTO] ATTACH MEDIA ASSET:", type=["png", "jpg", "jpeg"])
 if uploaded_file is not None:
     image_bytes = uploaded_file.read()
     image_mime_type = uploaded_file.type
     uploaded_b64_image = base64.b64encode(image_bytes).decode('utf-8')
-    st.image(image_bytes, caption="Loaded Input Transmission", width=300)
+    st.image(image_bytes, caption="Buffered Vision Stream", width=250)
 
-audio_file = st.audio_input("🎤 TAP MIC TO SPEAK:")
+# Native microphone component mapping directly to app interface
+audio_file = st.audio_input("🎤 [MIC INTERCOM] TAP TO CAPTURE VOICE:")
 if audio_file is not None:
-    st.info("Audio received and synced.")
+    st.success("STS Audio Transceiver Block Latched!")
 
-# ==========================================
-# 🎨 HIGH-SPEED PHOTO GENERATOR MODULE
-# ==========================================
-st.write("### 🖼️ IMAGE GENERATOR LAB")
-img_prompt = st.text_input("Enter whatever you want to generate:", placeholder="e.g. phonk cat artwork")
-if st.button("🚀 Render Custom Image"):
+# Real-Time Prompt Photo Generator Lab Terminal
+st.write("### 🎨 IMAGE GENERATION PROTOCOL")
+img_prompt = st.text_input("Describe the image you want to create:", placeholder="e.g. neon wolf wearing headphones")
+if st.button("🚀 Execute Photo Render"):
     if img_prompt:
         encoded_prompt = urllib.parse.quote(img_prompt)
         seed_random = os.urandom(4).hex()
         image_url = f"https://image.pollinations.ai/p/{encoded_prompt}?width=1024&height=1024&nologo=true&seed={seed_random}"
-        st.image(image_url, caption=f"Generated Image: {img_prompt}", use_container_width=True)
-        shortcut_command = f"I generated an image artwork for: '{img_prompt}'! Confirm that it looks sick."
+        st.image(image_url, caption=f"Render Complete: '{img_prompt}'", use_container_width=True)
+        shortcut_command = f"I generated a photo for: '{img_prompt}'. React to my awesome prompt creation out loud!"
 
 st.markdown("---")
 
 # ==========================================
-# AUDIO OUTPUT MATRIX ENGINE
+# TEXT CLEANING & SPEED TUNED AUDIO ENGINE
 # ==========================================
 def clean_text_for_speech(text):
     text = text.replace("N.O.V.A. Response:", "").strip()
@@ -156,7 +155,7 @@ def clean_text_for_speech(text):
     return re.sub(r'\s+', ' ', text).strip()
 
 async def generate_voice(text, voice):
-    # Standard sound compression rate for instant speaker response
+    # Running at +25% conversational speed to fix slow pronunciation loops
     communicate = edge_tts.Communicate(clean_text_for_speech(text), voice, rate="+25%")
     audio_stream = io.BytesIO()
     async for chunk in communicate.stream():
@@ -200,12 +199,13 @@ def load_recent_memory(limit=6):
     return [{"role": "user" if s == "You" else "assistant", "content": m} for s, m in reversed(rows)]
 
 # ==========================================
-# OPENROUTER BRAIN LAYER
+# OPENROUTER BRAIN LAYER (INTELLIGENT ROUTING)
 # ==========================================
 def ask_nova_core(user_input, b64_img=None, mime_type=None):
     url = "https://openrouter.ai/api/v1/chat/completions"
     headers = {"Authorization": f"Bearer {OPENROUTER_KEY}", "Content-Type": "application/json"}
     
+    # Intelligently loads standard models or vision model structures based on context
     selected_model = "google/gemini-2.5-flash" if b64_img else "deepseek/deepseek-chat"
     system_message = {"role": "system", "content": system_gender_prompt}
     
@@ -243,7 +243,7 @@ for msg in recent_chats:
             st.write("**N.O.V.A.**")
             st.write(msg["content"])
 
-user_query = st.chat_input("Enter core command...")
+user_query = st.chat_input("Type your message here...")
 if shortcut_command:
     user_query = shortcut_command
 
