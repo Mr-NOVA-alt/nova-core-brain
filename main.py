@@ -204,12 +204,15 @@ async def generate_voice(text, voice):
     audio_stream.seek(0)
     return audio_stream
 
-def speak_text_premium(text, voice):
+def speak_text_premium_html(text, voice):
+    """Generates audio stream and embeds it as a direct HTML5 autoplay string to prevent rerun drops."""
     try:
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         audio_data = loop.run_until_complete(generate_voice(text, voice))
-        st.audio(audio_data, format="audio/mp3", autoplay=True)
+        b64_audio = base64.b64encode(audio_data.read()).decode('utf-8')
+        audio_tag = f'<audio autoplay="true" src="data:audio/mp3;base64,{b64_audio}"></audio>'
+        components.html(audio_tag, height=0, width=0)
     except:
         pass
 
@@ -275,12 +278,12 @@ if user_query:
             with st.chat_message("assistant"):
                 st.write(f"**N.O.V.A.** \n*{log_status}*")
                 st.markdown(f"<div class='notepad-box'><pre>{valid_code}</pre></div>", unsafe_allow_html=True)
-                speak_text_premium("Code validated and compiled successfully, Boss.", VOICE_ID)
+                speak_text_premium_html("Code validated and compiled successfully, Boss.", VOICE_ID)
             save_to_memory("N.O.V.A.", f"[Code Verified] {valid_code}")
         else:
             with st.chat_message("assistant"):
                 st.write("**N.O.V.A.**"); st.write(reply)
-                speak_text_premium(reply, VOICE_ID)
+                speak_text_premium_html(reply, VOICE_ID)
             save_to_memory("N.O.V.A.", reply)
             
     time.sleep(0.1); st.rerun()
